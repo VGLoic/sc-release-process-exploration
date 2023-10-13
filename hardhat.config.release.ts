@@ -2,7 +2,6 @@ import { HardhatUserConfig } from 'hardhat/config'
 import '@nomicfoundation/hardhat-toolbox'
 import 'hardhat-deploy'
 import 'dotenv/config'
-import '@primitivefi/hardhat-dodoc'
 import { config as baseConfig } from './hardhat.config';
 
 const RELEASE_NAME = process.env.RELEASE_NAME || '0.0.0';
