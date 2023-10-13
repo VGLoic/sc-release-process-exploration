@@ -6,7 +6,8 @@
   "scripts": {
     "postinstall": "yarn compile",
     "compile": "hardhat compile",
-    "release": "hardhat compile --config hardhat.config.release.ts"
+    "release": "hardhat compile --config hardhat.config.release.ts",
+    "deploy:counter": "HARDHAT_NETWORK=maticmum ts-node --files scripts/deploy-counter.ts"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
