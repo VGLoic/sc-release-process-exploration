@@ -2,6 +2,14 @@ import { BuildInfo, HardhatRuntimeEnvironment } from 'hardhat/types'
 import { ArtifactData, DeployOptions } from 'hardhat-deploy/dist/types'
 import { Etherscan } from "@nomicfoundation/hardhat-verify/etherscan";
 
+/**
+ * Retrieve an existing deployment or deploy a new one
+ * A deployment is considered existing if the contract bytecode is the same than the current one
+ * @param hre Hardhat runtime environment
+ * @param deploymentName Name of the deployment
+ * @param options Deployment options
+ * @returns Address of the deployed contract
+ */
 export async function retrieveOrDeploy(hre: HardhatRuntimeEnvironment, deploymentName: string, options: DeployOptions) {
     const result = await hre.deployments.fetchIfDifferent(deploymentName, options)
     if (!result.differences && result.address) {
@@ -19,19 +27,65 @@ export async function retrieveOrDeploy(hre: HardhatRuntimeEnvironment, deploymen
     return deploymentResult.address
 }
 
-function sleep(seconds: number) {
-    return new Promise((resolve) => setTimeout(resolve, seconds * 1000))
+/**
+ * Sleep for a given amount of time
+ * @param ms Milliseconds to sleep
+ */
+function sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 type VerifyPayload = {
+    // Address of the deployed contract
     address: string
+    // Contract artifact with source name and contract name
     artifact: ArtifactData & {
         sourceName: string
         contractName: string
     }
+    // Build info of the associated contract artifact
     buildInfo: BuildInfo
+    // Libraries if any
+    libraries?: {
+        address: string;
+        artifact: ArtifactData & {
+            sourceName: string;
+            contractName: string;
+        };
+      }[]
 }
+/**
+ * Verify a contract on Etherscan
+ * @dev Only works for Polygon Scan on Mumbai Testnet for now
+ * @dev Need to be completed with constructor arguments
+ * @param payload Verification payload
+ * @param payload.address Address of the deployed contract
+ * @param payload.artifact Contract artifact with source name and contract name
+ * @param payload.buildInfo Build info of the associated contract artifact
+ * @param payload.libraries Libraries if any
+ */
 export async function verifyContract(payload: VerifyPayload) {
+  const updatedSetting: BuildInfo["input"]["settings"] & { libraries: NonNullable<BuildInfo["input"]["settings"]["libraries"]> } = {
+    ...payload.buildInfo.input.settings,
+    libraries: {},
+  };
+
+    if (payload.libraries) {
+      for (const library of payload.libraries) {
+        updatedSetting.libraries[library.artifact.sourceName] = {
+          [library.artifact.contractName]: library.address
+        };
+      }
+    }
+
+    const updatedBuildInfo: BuildInfo = {
+      ...payload.buildInfo,
+      input: {
+        ...payload.buildInfo.input,
+        settings: updatedSetting,
+      },
+    };
+    payload.buildInfo = updatedBuildInfo;
     
     // ******************* End disabling *******************
     for (let i = 0; i < 5; i++) {
@@ -41,7 +95,7 @@ export async function verifyContract(payload: VerifyPayload) {
       } catch (err) {
         const message = (err as any).message as string
         if (message && message.includes('does not have bytecode')) {
-          await sleep(2)
+          await sleep(2_000)
           continue
         }
   
@@ -90,19 +144,17 @@ export async function verifyContract(payload: VerifyPayload) {
             ''
         );
     
-        await sleep(2);
+        await sleep(2_000);
     
         const verificationStatus = await etherscan.getVerificationStatus(guid);
     
         if (verificationStatus.isSuccess()) {
-            console.log("Successfully verified!");
+            console.log(`Successfully verified contract ${payload.artifact.contractName}`);
         } else {
-            console.log("Failed to verify?");
-            console.log(verificationStatus);
+            throw new Error(verificationStatus.message);
         }
     } catch (err) {
         throw err;
     }
-    
   }
 
