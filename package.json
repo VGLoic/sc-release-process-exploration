@@ -8,6 +8,7 @@
     "format": "prettier --write --plugin=prettier-plugin-solidity 'src/**/*.sol'",
     "compile": "yarn format && hardhat compile",
     "release:prepare": "yarn format && hardhat compile --config hardhat.config.release.ts && ts-node --files scripts/prepare-release.ts",
+    "release:generate-delta": "ts-node --files scripts/generate-delta.ts",
     "build": "ts-node --files scripts/build.ts",
     "deploy:counter": "HARDHAT_NETWORK=maticmum ts-node --files scripts/deploy-counter.ts"
   },

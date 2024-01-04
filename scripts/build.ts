@@ -1,4 +1,5 @@
 import fs from 'fs/promises';
+import { toResult } from './utils';
 
 /**
  * Based on the releases and generated delta artifacts folders,
@@ -6,10 +7,10 @@ import fs from 'fs/promises';
  * ```
  * dist
  * ├── <contract-name>
- * │   ├── <version a>.json
- * │   ├── <version a>.ts
- * │   ├── <version b>.json
- * │   └── <version b>.ts
+ * │   ├── <release-name a>.json
+ * │   ├── <release-name a>.ts
+ * │   ├── <release-name b>.json
+ * │   └── <release-name b>.ts
  * └── ...
  * ```
  * The `.json` files will contain the ABI of the contract at the corresponding version.
@@ -20,11 +21,9 @@ import fs from 'fs/promises';
  * If the process fails, the `dist` folder will be removed and the `dist-old` folder will be renamed back to `dist`.
  * 
  * @dev Assumptions:
- * - The `releases` folder exists and contains the releases of the contracts.
- * - The `releases/generated-delta/artifacts` folder exists and contains the generated delta artifacts.
- * - The generated delta artifacts are in the form `releases/generated-delta/artifacts/<contract-name>/v<Major>.<Minor>.<Patch>.json`.
+ * - The `releases` folder exists and follows the structure described in `scripts/prepare-release.ts`,
+ * - The `releases/generated-delta/artifacts` folder exists and contains the generated delta artifacts. See `scripts/generate-delta.ts` for more details and the expected structure.
  * - The generated delta artifacts are JSON files with an `abi` property.
- * - The generated delta artifacts are sorted by contract name, then by version.
  */
 async function build() {
     const hasReleasesFolder = await fs.stat('./releases').catch(() => false);
@@ -84,8 +83,12 @@ async function build() {
         await fillDistFolder();
         // Remove the old `dist` folder if it exists
         if (hasDistFolder) {
-            await fs.rm('./dist-old', { recursive: true });
+            await fs.rm('./dist-old', { recursive: true }).catch((e) => {
+                console.error('❌ There was an error removing the old `dist` folder. Please remove it manually.');
+                console.error(e);
+            });
         }
+        console.log('✅ Build successful.');
     } catch (err) {
         // If there was an error, remove the new `dist` folder and rename the potential old one back
         await fs.rm('./dist', { recursive: true }).catch((e) => {
@@ -156,24 +159,6 @@ async function* lookForContractAbiVersions(contractName: string): AsyncGenerator
             }
         }
     }
-}
-
-type Result<T> = {
-    ok: true;
-    data: T;
-} | {
-    ok: false;
-    error: Error;
-};
-/**
- * Converts a promise to a promise of a result.
- * @param promise Promise to convert
- * @returns The result of the promise
- */
-function toResult<T>(promise: Promise<T>): Promise<Result<T>> {
-    return promise
-        .then((data) => ({ ok: true as const, data }))
-        .catch((error) => ({ ok: false as const, error }));
 }
 
 build()

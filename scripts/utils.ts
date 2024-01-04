@@ -35,6 +35,73 @@ function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+export function semverStringToSemver(s: string) {
+  if (!/^v\d+\.\d+\.\d+$/.test(s)) {
+      throw new Error('Invalid semver string');
+  }
+  const versions = s.slice(1).split('.').map(n => parseInt(n));
+  if (versions.some(n => isNaN(n))) {
+      throw new Error('Invalid semver string');
+  }
+
+  return { major: versions[0], minor: versions[1], patch: versions[2] };
+}
+
+export function findLastRelease(releases: string[]) {
+  if (releases.some(r => !/^v\d+\.\d+\.\d+$/.test(r))) {
+      throw new Error('Invalid release names');
+  }
+  let lastRelease = {
+      name: releases[0],
+      semver: semverStringToSemver(releases[0])
+  }
+  for (let i = 1; i < releases.length; i++) {
+      const release = releases[i];
+      const semver = semverStringToSemver(release);
+      if (semver.major > lastRelease.semver.major) {
+          lastRelease = {
+              name: release,
+              semver
+          }
+      }
+      if (semver.major === lastRelease.semver.major) {
+          if (semver.minor > lastRelease.semver.minor) {
+              lastRelease = {
+                  name: release,
+                  semver
+              }
+          }
+          if (semver.minor === lastRelease.semver.minor) {
+              if (semver.patch > lastRelease.semver.patch) {
+                  lastRelease = {
+                      name: release,
+                      semver
+                  }
+              }
+          }
+      }
+  }
+  return lastRelease;
+}
+
+type Result<T> = {
+  ok: true;
+  data: T;
+} | {
+  ok: false;
+  error: Error;
+};
+/**
+* Converts a promise to a promise of a result.
+* @param promise Promise to convert
+* @returns The result of the promise
+*/
+export function toResult<T>(promise: Promise<T>): Promise<Result<T>> {
+  return promise
+      .then((data) => ({ ok: true as const, data }))
+      .catch((error) => ({ ok: false as const, error }));
+}
+
 type VerifyPayload = {
     // Address of the deployed contract
     address: string
