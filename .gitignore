@@ -10,3 +10,6 @@ cache
 artifacts
 !releases/**/artifacts
 cache_hardhat
+
+# Build
+dist

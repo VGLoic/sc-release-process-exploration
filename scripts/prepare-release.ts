@@ -1,5 +1,50 @@
 import fs from 'fs/promises';
 
+/**
+ * Prepare the next release
+ * This script must be run after an isolated hardhat compilation using the `hardhat.config.release.ts` config file.
+ * 
+ * If there are no previous releases, it will create the first release by
+ *  1. copying the `releases/tmp` folder to `releases/v1.0.0`,
+ *  2. initializing the `releases/generated-delta` folder.
+ * 
+ * If there are previous releases, it will create the next release.
+ * The next release name is derived from the last release by incrementing the minor version.
+ * The next release is created by
+ * 1. copying the `releases/tmp` folder to `releases/<next release name>`,
+ * 2. comparing the current artifacts with the previous ones and generating the delta artifacts.
+ * 
+ * @dev Assumptions:
+ * - The `releases` folder exists,
+ * - The `releases/tmp` folder exists and contains the artifacts of the current release, it must have been created by a Hardhat compilation. See below for the exact expected structure.
+ * - The `releases/generated-delta` folder may exist, if it does, it contains the generated delta artifacts. See below for the exact structure.
+ *
+ * @dev The `releases/tmp` folder has the following expected structure:
+ * ```
+ * releases/tmp
+ * └── artifacts
+ *   ├── build-info
+ *   │   └── <build info file name>.json
+ *   └── src
+ *      ├── <contract-name>.sol
+ *      │   └── <contract-name>.dbg.json
+ *      │   └── <contract-name>.json
+ *      └── ...
+ * ```
+ * 
+ * @dev The `releases/generated-delta` folder has the following structure:
+ * ```
+ * releases/generated-delta
+ * ├── build-infos
+ * │   ├── <version a>.json
+ * │   └── <version b>.json
+ * └── artifacts
+ *    ├── <contract-name>
+*     │   ├── <version a>.json
+ *    │   └── <version b>.json
+ *    └── ...
+ * ```
+ */
 async function prepareRelease() {
     const hasReleasesFolder = await fs.stat('./releases').catch(() => false);
     if (!hasReleasesFolder) {
@@ -28,6 +73,7 @@ async function prepareRelease() {
             await fs.rename('./releases/tmp', `./releases/${INITIAL_RELEASE_NAME}`);
             // 3. we initialize the `./releases/generated-delta` folder
             await initGeneratedFiles(INITIAL_RELEASE_NAME);
+            console.log(`✅ The first release ${INITIAL_RELEASE_NAME} has been created. You can now run \`yarn build\` to generate the artifacts to be distributed.`)
         } catch (err) {
             console.error('❌ An error occured while creating the first release. The `./releases` folder will be deleted. Please check the error below and try again.')
             console.error(err);
@@ -57,6 +103,7 @@ async function prepareRelease() {
         try {
             // 5. we compare the current artifacts with the previous ones
             await compareAndGenerate(nextReleaseName);
+            console.log(`✅ The next release ${nextReleaseName} has been created. You can now run \`yarn build\` to generate the artifacts to be distributed.`)
         } catch (err) {
             console.error(`❌ An error occured while creating the next release. The \`./releases/tmp\` and the \`./releases/${nextReleaseName}\` folders will be deleted.
             Please check the error below and try again.`)
@@ -70,8 +117,17 @@ async function prepareRelease() {
     }
 }
 
+/**
+ * Initialize the generated files and folders
+ * This function is called when the first release is created
+ * It copies the build info file and the contract artifacts to the generated delta folder
+ * @dev Assumptions:
+ * - The `releases/${releaseName}/artifacts/build-info` folder exists and contains the build info file.
+ * - The `releases/${releaseName}/artifacts/src` folder exists and contains the contract artifacts.
+ * @param releaseName 
+ */
 async function initGeneratedFiles(releaseName: string) {
-    // Delete releases/generated folder if it exists
+    // Delete releases/generated-delta folder if it exists
     const hasGeneratedFolder = await fs.stat('./releases/generated-delta').catch(() => false);
     if (hasGeneratedFolder) {
         await fs.rm('./releases/generated-delta', { recursive: true });
@@ -96,6 +152,27 @@ async function initGeneratedFiles(releaseName: string) {
     }
 }
 
+/**
+ * Compare the current artifacts with the previous ones and generate the delta artifacts
+ * This function is called when the next release is created
+ * It compares the current artifacts with the previous ones and generates the delta artifacts
+ * If the current artifact is different from the previous one based on the bytecode, the current artifact is copied to the generated delta folder.
+ * If the current artifact is the same as the previous one, no delta artifact is generated.
+ * The generated delta artifacts are in the form `releases/generated-delta/artifacts/<contract-name>/<release-name>.json`.
+ * 
+ * In case of error, the created files and folders are deleted.
+ * If the release is empty, no files or folders are created and an error is thrown.
+ * This method bubbles up the error to the caller.
+ * 
+ * @dev Assumptions:
+ * - The `releases/${releaseName}/artifacts/build-info` folder exists and contains the build info file.
+ * - The `releases/${releaseName}/artifacts/src` folder exists and contains the contract artifacts.
+ * - The contract artifacts are JSON files with an `bytecode` property.
+ * - The `releases/generated-delta` folder exists and contains the generated delta artifacts.
+ * - The generated delta artifacts are in the form `releases/generated-delta/artifacts/<contract-name>/<release-name>.json`.
+ * 
+ * @param releaseName 
+ */
 async function compareAndGenerate(releaseName: string) {
     // We keep track of the created files and folders, in order to delete them if an error occurs
     let createdFiles = [];
