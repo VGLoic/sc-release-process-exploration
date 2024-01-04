@@ -1,13 +1,13 @@
 {
   "name": "release-process-exploration",
   "version": "1.0.0",
-  "main": "index.js",
   "license": "MIT",
   "scripts": {
     "postinstall": "yarn compile",
-    "format": "prettier --write --plugin=prettier-plugin-solidity 'src/**/*.sol'",
+    "format:contracts": "prettier --write --plugin=prettier-plugin-solidity 'src/**/*.sol'",
+    "format": "prettier --write --plugin=prettier-plugin-solidity 'src/**/*.sol' 'scripts/**/*.ts'",
     "compile": "yarn format && hardhat compile",
-    "release:prepare": "yarn format && hardhat compile --config hardhat.config.release.ts && ts-node --files scripts/prepare-release.ts",
+    "release:prepare": "yarn format:contracts && hardhat compile --config hardhat.config.release.ts && ts-node --files scripts/prepare-release.ts",
     "release:generate-delta": "ts-node --files scripts/generate-delta.ts",
     "build": "ts-node --files scripts/build.ts",
     "deploy:counter": "HARDHAT_NETWORK=maticmum ts-node --files scripts/deploy-counter.ts"
@@ -35,6 +35,7 @@
     "prettier-plugin-solidity": "^1.1.3",
     "solidity-coverage": "^0.8.0",
     "ts-node": ">=8.0.0",
+    "tsup": "^8.0.1",
     "typechain": "^8.1.0",
     "typescript": ">=4.5.0"
   }
