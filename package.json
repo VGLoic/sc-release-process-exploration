@@ -1,7 +1,8 @@
 {
   "name": "sc-release-process-exploration",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "license": "MIT",
+  "files": ["abis"],
   "scripts": {
     "postinstall": "yarn compile",
     "format:contracts": "prettier --write --plugin=prettier-plugin-solidity 'src/**/*.sol'",
@@ -10,8 +11,9 @@
     "release:compile": "yarn format:contracts && hardhat compile --config hardhat.config.release.ts && ts-node --files scripts/copy-compilation.ts",
     "release:generate-delta": "ts-node --files scripts/generate-delta.ts",
     "release:build": "ts-node --files scripts/build.ts",
-    "release:prepare": "yarn release:compile && yarn release:generate-delta && yarn release:build",
-    "release": "yarn release:generate-delta && yarn release:build && yarn changeset publish",
+    "release:copy-dist": "ts-node --files scripts/copy-dist.ts",
+    "release:prepare": "yarn release:compile && yarn release:generate-delta && yarn release:build && yarn release:copy-dist",
+    "release": "yarn release:generate-delta && yarn release:build && yarn release:copy-dist && yarn changeset publish",
     "deploy:counter": "HARDHAT_NETWORK=maticmum ts-node --files scripts/deploy-counter.ts"
   },
   "devDependencies": {
