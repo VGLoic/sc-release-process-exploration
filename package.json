@@ -1,8 +1,10 @@
 {
   "name": "sc-release-process-exploration",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "license": "MIT",
-  "files": ["abis"],
+  "files": [
+    "abis"
+  ],
   "scripts": {
     "postinstall": "yarn compile",
     "format:contracts": "prettier --write --plugin=prettier-plugin-solidity 'src/**/*.sol'",
