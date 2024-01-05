@@ -20,6 +20,12 @@ jobs:
                   node-version: 20.10
             - name: Install dependencies
               run: yarn
+            - name: Configure AWS Credentials
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                aws-region: eu-west-3
             - name: Create Release Pull Request or Publish to npm
               id: changesets
               uses: changesets/action@v1
@@ -28,3 +34,6 @@ jobs:
               env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                 NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+            - name: Copy releases artifacts to S3
+              if: steps.changesets.outputs.published == 'true'
+              run: aws s3 cp --recursive ./releases s3://fork-test/my-sandbox/releases
