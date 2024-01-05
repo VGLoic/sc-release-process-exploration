@@ -123,6 +123,7 @@ dist
 |   └── ...
 └── ...
 ```
+6. the `dist` folder is copied in a more friendly exposed `abis` folder for consumers.
 
 
 ## About deployment
