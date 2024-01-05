@@ -11,6 +11,7 @@
     "release:generate-delta": "ts-node --files scripts/generate-delta.ts",
     "release:build": "ts-node --files scripts/build.ts",
     "release:prepare": "yarn release:compile && yarn release:generate-delta && yarn release:build",
+    "release": "yarn release:generate-delta && yarn release:build && yarn changeset publish",
     "deploy:counter": "HARDHAT_NETWORK=maticmum ts-node --files scripts/deploy-counter.ts"
   },
   "devDependencies": {
