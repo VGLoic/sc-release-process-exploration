@@ -24,7 +24,8 @@ yarn changeset
 ```console
 yarn release:prepare
 ```
-3. Commit in a dedicated branch, create a PR and merge it.
+3. commit in a dedicated branch, create a PR and merge it,
+4. merge the automated Changeset PR.
 
 ## Release process details
 
