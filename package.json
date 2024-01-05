@@ -6,7 +6,6 @@
     "abis"
   ],
   "scripts": {
-    "postinstall": "yarn compile",
     "format:contracts": "prettier --write --plugin=prettier-plugin-solidity 'src/**/*.sol'",
     "format": "prettier --write --plugin=prettier-plugin-solidity 'src/**/*.sol' 'scripts/**/*.ts'",
     "compile": "yarn format && hardhat compile",
