@@ -7,12 +7,14 @@
     "format:contracts": "prettier --write --plugin=prettier-plugin-solidity 'src/**/*.sol'",
     "format": "prettier --write --plugin=prettier-plugin-solidity 'src/**/*.sol' 'scripts/**/*.ts'",
     "compile": "yarn format && hardhat compile",
-    "release:prepare": "yarn format:contracts && hardhat compile --config hardhat.config.release.ts && ts-node --files scripts/prepare-release.ts",
+    "release:compile": "yarn format:contracts && hardhat compile --config hardhat.config.release.ts && ts-node --files scripts/copy-compilation.ts",
     "release:generate-delta": "ts-node --files scripts/generate-delta.ts",
-    "build": "ts-node --files scripts/build.ts",
+    "release:build": "ts-node --files scripts/build.ts",
+    "release:prepare": "yarn release:compile && yarn release:generate-delta && yarn release:build",
     "deploy:counter": "HARDHAT_NETWORK=maticmum ts-node --files scripts/deploy-counter.ts"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.27.1",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
     "@nomicfoundation/hardhat-ethers": "^3.0.0",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
