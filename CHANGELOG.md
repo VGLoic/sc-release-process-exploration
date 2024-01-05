@@ -1,5 +1,11 @@
 # sc-release-process-exploration
 
+## 1.2.0
+
+### Minor Changes
+
+- f9e66f7: Update increment amount
+
 ## 1.1.0
 
 ### Minor Changes
