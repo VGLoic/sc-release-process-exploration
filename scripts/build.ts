@@ -255,7 +255,7 @@ async function fillDistTmpFolder() {
 /**
  * Async generator that yields the versions and ABIs of a contract.
  * @dev Error handling is not done in this function. It is assumed that the caller will handle errors.
- * @dev Only the file of format `v<Major>.<Minor>.<Patch>.json` are expected and handled.
+ * @dev Only the json files are expected and handled.
  * @dev It is assumed that the file content is a JSON object with an `abi` property.
  * @param contractName Name of the contract
  * @yields The version and ABI of the contract
@@ -270,10 +270,17 @@ async function* lookForContractAbiVersions(
   for (const entry of entries) {
     // Only files are expected
     if (entry.isFile()) {
-      // Check if the file is a version file of the form `v<Major>.<Minor>.<Patch>.json`
-      const match = entry.name.match(/^v(\d+)\.(\d+)\.(\d+)\.json$/);
-      if (match) {
-        const version = `${match[1]}.${match[2]}.${match[3]}`;
+      // Check if the file is a version file of the form `<name>.json`
+      const versionName = entry.name.endsWith(".json")
+        ? entry.name.slice(0, -5)
+        : undefined;
+      // const versionName = entry.name.match(/^v(\d+)\.(\d+)\.(\d+)\.json$/)
+      //   ? entry.name.slice(1, -5)
+      //   : entry.name.match(/^snapshot-(.+)\.json$/)
+      //   ? entry.name.slice(0, -5)
+      //   : undefined
+
+      if (versionName) {
         const fileContent = await fs.readFile(
           `./releases/generated-delta/artifacts/${contractName}/${entry.name}`,
           "utf-8",
@@ -281,7 +288,7 @@ async function* lookForContractAbiVersions(
         // file content is expected to be a JSON object with a `abi` property
         const abi = JSON.parse(fileContent).abi;
         if (abi) {
-          yield { version, abi: JSON.stringify(abi, null, 4) };
+          yield { version: versionName, abi: JSON.stringify(abi, null, 4) };
         }
       }
     }

@@ -9,6 +9,8 @@ import { findLastRelease, semverStringToSemver, toResult } from "./utils";
  * If there is only one release, it will initialize the `generated-delta` folder and populate it with the artifacts.
  * If there are multiple releases, it will compare the current artifacts with the previous ones and generate the delta artifacts for each successive release.
  *
+ * If there are snapshots releases, artifacts are not compared with other releases and are simply copied.
+ *
  * If existing delta artifacts are found, they are moved to `generated-delta-old` folder during the new generation.
  * If an error occurs during the generation, the new `generated-delta` folder is removed and the old one is renamed back to `generated-delta`.
  *
@@ -45,7 +47,9 @@ async function generateDelta() {
   const previousReleases = await fs
     .readdir("./releases")
     .then((releases) =>
-      releases.filter((r) => !["tmp", "generated-delta"].includes(r)),
+      releases.filter(
+        (r) => !["tmp", "generated-delta", "snapshots"].includes(r),
+      ),
     );
   if (previousReleases.length === 0) {
     // Exit if there are no releases
@@ -144,6 +148,16 @@ async function generateDelta() {
       const release = orderedReleases[i];
       // We compare the current release with the previous one
       await compareAndGenerate(release);
+    }
+
+    const hasSnapshotsFolder = await fs
+      .stat("./releases/snapshots")
+      .catch(() => false);
+    if (hasSnapshotsFolder) {
+      const snapshots = await fs.readdir("./releases/snapshots");
+      for (const snapshot of snapshots) {
+        await copySnapshotArtifacts(snapshot);
+      }
     }
 
     // Remove the old `generated-delta` folder if it exists
@@ -355,6 +369,45 @@ async function compareAndGenerate(releaseName: string) {
     // If no files or folders have been created, we throw an error
     console.warn(
       `Only build infos have been created. It looks like the release ${releaseName} is empty.`,
+    );
+  }
+}
+
+/**
+ * Copy the snapshot artifacts to the generated delta folder
+ * @param snapshotReleaseName Name of the snapshot release
+ */
+async function copySnapshotArtifacts(snapshotReleaseName: string) {
+  // Copy `releases/${snapshotReleaseName}/artifacts/build-info/<build info file name>.json` to `releases/generated-delta/build-infos/${snapshotReleaseName}.json`
+  const buildInfoFileName = (
+    await fs.readdir(
+      `./releases/snapshots/${snapshotReleaseName}/artifacts/build-info`,
+    )
+  )[0];
+  await fs.copyFile(
+    `./releases/snapshots/${snapshotReleaseName}/artifacts/build-info/${buildInfoFileName}`,
+    `./releases/generated-delta/build-infos/${snapshotReleaseName}.json`,
+  );
+
+  // Recursively read releases/snapshots/${snapshotReleaseName}/artifacts/src
+  // Iterate over each contract artifact
+  for await (const entry of lookForContractArtifact(
+    `./releases/snapshots/${snapshotReleaseName}/artifacts/src`,
+  )) {
+    // Check if a generated contract folder exists already
+    const hasContractFolder = await fs
+      .stat(`./releases/generated-delta/artifacts/${entry.contractName}`)
+      .catch(() => false);
+    // If the folder does not exist, create the folder
+    if (!hasContractFolder) {
+      await fs.mkdir(
+        `./releases/generated-delta/artifacts/${entry.contractName}`,
+      );
+    }
+    // Copy the artifact
+    await fs.copyFile(
+      entry.filePath,
+      `./releases/generated-delta/artifacts/${entry.contractName}/${snapshotReleaseName}.json`,
     );
   }
 }

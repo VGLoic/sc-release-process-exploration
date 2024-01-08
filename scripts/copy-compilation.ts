@@ -107,11 +107,13 @@ async function copyNewReleaseCompilation() {
   }
 
   // Check if there are previous releases by retrieving all the folders in `./releases` folder
-  // and filter out the `tmp` and `generated-delta` folders
+  // and filter out the `tmp`, `generated-delta` and `snapshots` folders
   const previousReleases = await fs
     .readdir("./releases")
     .then((releases) =>
-      releases.filter((r) => !["tmp", "generated-delta"].includes(r)),
+      releases.filter(
+        (r) => !["tmp", "generated-delta", "snapshots"].includes(r),
+      ),
     );
   if (previousReleases.length === 0) {
     // If there are no previous releases
