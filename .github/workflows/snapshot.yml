@@ -1,0 +1,32 @@
+name: Snapshot branches worflow
+
+on:
+    push:
+        branches:
+            - snapshot/*
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+    snapshot-release:
+        name: Snapshot release
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20.10
+            - name: Install dependencies
+              run: yarn
+            - name: Extract snapshot name
+              id: extract_snapshot_name
+              shell: bash
+              run: |
+                echo "snapshot_name=${GITHUB_HEAD_REF#snapshot/}" >> $GITHUB_OUTPUT
+            - name: Create snapshot release
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+              run: yarn create-snapshot-release ${{ steps.extract_snapshot_name.outputs.snapshot_name }}
