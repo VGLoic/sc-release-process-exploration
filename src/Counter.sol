@@ -8,6 +8,6 @@ contract Counter {
 
     function increment() public {
         uint256 incrementAmount = IncrementOracle.getIncrement();
-        counter += incrementAmount * 3;
+        counter += incrementAmount * 2;
     }
 }
