@@ -18,15 +18,16 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: 20.10
+                  registry-url: 'https://registry.npmjs.org'
             - name: Install dependencies
               run: yarn
             - name: Extract snapshot name
               id: extract_snapshot_name
-              shell: bash
               run: |
-                echo "snapshot_name=${GITHUB_HEAD_REF#snapshot/}" >> $GITHUB_OUTPUT
+                echo "snapshot-name=${GITHUB_REF#refs/heads/snapshot/}" >> $GITHUB_OUTPUT
             - name: Create snapshot release
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-              run: yarn create-snapshot-release ${{ steps.extract_snapshot_name.outputs.snapshot_name }}
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+              run: yarn create-snapshot-release ${{ steps.extract_snapshot_name.outputs.snapshot-name }}
