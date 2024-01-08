@@ -134,7 +134,7 @@ From the [Changesets documentation](https://github.com/changesets/changesets/blo
 
 In order to publish a snapshot release, one first creates a branch `snapshot/<snapshot name>` with the target smart contract codebase. Once the branch is created,
 - **If the user has the authorization to publish the NPM package**, he/she can run `yarn snapshot-release <snapshot-name>`. At this point, the branch can be deleted,
-- **Otherwise**, the user can push the branch, even if there are no changes, to the remote registry, i.e. `git push`. If the branch was correctly named, it will trigger a workflow in order to create the snapshot release.
+- **Otherwise**, the user can push the branch, even if there are no changes, to the remote registry, i.e. `git push`. If the branch was correctly named, it will trigger a workflow in order to create the snapshot release. Once the release has been successful, the branch can be deleted.
 
 
 ## About deployment
