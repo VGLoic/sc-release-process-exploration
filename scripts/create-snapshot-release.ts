@@ -144,18 +144,18 @@ async function copySnapshotCompilation(snapshotName: string) {
 }
 
 async function createDummyChangesetSnapshotRelease(snapshotName: string) {
+  // Taken from https://github.com/changesets/changesets/blob/main/packages/write/README.md
   const changeset = {
     summary: "Snapshot release",
     releases: [
       { name: "sc-release-process-exploration", type: "minor" as const },
     ],
   };
-
   const id = await write(changeset, process.cwd());
   console.log("Successfully wrote changeset with id: ", id);
 
+  // Taken from https://github.com/changesets/changesets/blob/main/packages/assemble-release-plan/README.md
   const packages = await getPackages(process.cwd());
-
   const preState = await readPreState(process.cwd());
   const config = await read(process.cwd(), packages);
   const changesets = await readChangesets(process.cwd());

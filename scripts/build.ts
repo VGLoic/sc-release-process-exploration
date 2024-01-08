@@ -274,11 +274,6 @@ async function* lookForContractAbiVersions(
       const versionName = entry.name.endsWith(".json")
         ? entry.name.slice(0, -5)
         : undefined;
-      // const versionName = entry.name.match(/^v(\d+)\.(\d+)\.(\d+)\.json$/)
-      //   ? entry.name.slice(1, -5)
-      //   : entry.name.match(/^snapshot-(.+)\.json$/)
-      //   ? entry.name.slice(0, -5)
-      //   : undefined
 
       if (versionName) {
         const fileContent = await fs.readFile(
