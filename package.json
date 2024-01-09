@@ -9,7 +9,7 @@
     "format:contracts": "prettier --write --plugin=prettier-plugin-solidity 'src/**/*.sol'",
     "format": "prettier --write --plugin=prettier-plugin-solidity 'src/**/*.sol' 'scripts/**/*.ts'",
     "compile": "yarn format && hardhat compile",
-    "release:compile": "yarn format:contracts && hardhat compile --config hardhat.config.release.ts && ts-node --files scripts/copy-compilation.ts",
+    "release:compile": "yarn format:contracts && ts-node --files scripts/compile.ts",
     "release:generate-delta": "ts-node --files scripts/generate-delta.ts",
     "release:build": "ts-node --files scripts/build.ts",
     "release:copy-dist": "ts-node --files scripts/copy-dist.ts",

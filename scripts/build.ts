@@ -175,7 +175,7 @@ async function build() {
         console.warn(e);
       });
     }
-    console.log("✅ Build successful.");
+    console.log("\n✅ Build for the exposed ABIs is successful.\n");
   } catch (err) {
     // If there was an error, remove the `dist-tmp` folder, remove the new `dist` folder if it exists, and rename the old `dist` folder back to `dist`
     const hasDistTmpFolder = await fs.stat("./dist-tmp").catch(() => false);

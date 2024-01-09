@@ -51,7 +51,7 @@ async function copyDistToAbis() {
     return;
   }
 
-  console.log("✅ Successfully copied `./dist` into `./abis`.");
+  console.log("\n✅ Successfully copied `./dist` into `./abis` for release.\n");
 }
 
 copyDistToAbis();

@@ -1,12 +1,13 @@
 import fs from "fs/promises";
 import getReleasePlan from "@changesets/get-release-plan";
 import { findLastRelease, semverStringToSemver, toResult } from "./utils";
+import { execSync } from "child_process";
 
 /**
- * Copy the compilation artifacts from `releases/tmp` to `releases/<release name>`.
+ * Compile the contracts for the next release and copy the artifacts to the `releases` folder.
+ * The compilation artifacts are created at `releases/<release name>`.
  *
  * This script must be run after at least one changeset for the new release has been added. Use `yarn changeset` to add a changeset.
- * This script must be run after an isolated hardhat compilation using the `hardhat.config.release.ts` config file.
  *
  * The release name is retrieved from the changeset version.
  *
@@ -14,10 +15,12 @@ import { findLastRelease, semverStringToSemver, toResult } from "./utils";
  * The next release is created by copying the `releases/tmp` folder to `releases/<release name>`,
  *
  * @dev Assumptions:
- * - The `releases/tmp` contains the artifacts of the current release, it must have been created by a Hardhat compilation. See below for the exact expected structure.
+ * - Formatting of the contracts using `prettier` must have been done before running this script.
+ * - The Hardhat compilation must have the expected structure. See below for the exact expected structure.
  * - The `releases/generated-delta` folder may exist, if it does, it contains the generated delta artifacts. Ignored in this script.
+ * - The `releases/snapshots` folder may exist, if it does, it contains the snapshots releases artifacts. Ignored in this script.
  *
- * @dev The `releases/tmp` folder has the following expected structure:
+ * @dev The result of the Hardhat compilation, `releases/tmp` folder, has the following expected structure:
  * ```
  * releases/tmp
  * └── artifacts
@@ -34,6 +37,7 @@ import { findLastRelease, semverStringToSemver, toResult } from "./utils";
  * ```
  * releases
  * ├── generated-delta // Ignored in this script
+ * ├── snapshots // Ignored in this script
  * ├── <release-name a>
  * │   └── artifacts
  * │       ├── build-info
@@ -54,7 +58,18 @@ import { findLastRelease, semverStringToSemver, toResult } from "./utils";
  *             └── ...
  *
  */
-async function copyNewReleaseCompilation() {
+async function compileForRelease() {
+  try {
+    execSync("hardhat compile --config hardhat.config.release.ts");
+  } catch (err) {
+    console.error(
+      "❌ An error occured while creating the snapshot release artifacts. Please check the error below and try again.",
+    );
+    console.error(err);
+    process.exitCode = 1;
+    return;
+  }
+
   const hasReleasesFolder = await fs.stat("./releases").catch(() => false);
   if (!hasReleasesFolder) {
     // Exit if there are no releases
@@ -135,7 +150,7 @@ async function copyNewReleaseCompilation() {
       return;
     }
     console.log(
-      `✅ The next release ${newReleaseVersion} has been created. You can now run \`yarn release:generate-delta && yarn build\` to generate the artifacts to be distributed.`,
+      `\n✅ The artifacts for the next release ${newReleaseVersion} have been created.\n`,
     );
   } else {
     // 1. we verify that the release names are valid semver
@@ -194,9 +209,9 @@ async function copyNewReleaseCompilation() {
       return;
     }
     console.log(
-      `✅ The next release ${newReleaseVersion} has been created. You can now run \`yarn release:generate-delta && yarn build\` to generate the artifacts to be distributed.`,
+      `\n✅ The artifacts for the next release ${newReleaseVersion} have successfully been created.\n`,
     );
   }
 }
 
-copyNewReleaseCompilation();
+compileForRelease();
