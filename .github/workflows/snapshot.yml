@@ -21,6 +21,12 @@ jobs:
                   registry-url: 'https://registry.npmjs.org'
             - name: Install dependencies
               run: yarn
+            - name: Configure AWS Credentials
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                aws-region: eu-west-3
             - name: Extract snapshot name
               id: extract_snapshot_name
               run: |
@@ -31,3 +37,5 @@ jobs:
                   NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
               run: yarn create-snapshot-release ${{ steps.extract_snapshot_name.outputs.snapshot-name }}
+            - name: Copy releases artifacts to S3
+              run: aws s3 cp --recursive ./releases s3://fork-test/my-sandbox/releases

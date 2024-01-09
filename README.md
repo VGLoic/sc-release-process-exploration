@@ -133,8 +133,8 @@ From the [Changesets documentation](https://github.com/changesets/changesets/blo
 > Snapshot releases are a way to release your changes for testing without updating the versions. Both a modified `version` and a modified `publish` command are used to do accomplish a snapshot release. After both processes run, you will have a published version of packages in changesets with a version of `0.0.0-{tag}-DATETIMESTAMP`.
 
 In order to publish a snapshot release, one first creates a branch `snapshot/<snapshot name>` with the target smart contract codebase. Once the branch is created,
-- **If the user has the authorization to publish the NPM package**, he/she can run `yarn snapshot-release <snapshot-name>`. At this point, the branch can be deleted,
-- **Otherwise**, the user can push the branch, even if there are no changes, to the remote registry, i.e. `git push`. If the branch was correctly named, it will trigger a workflow in order to create the snapshot release. Once the release has been successful, the branch can be deleted.
+- **Recommended option**, the user can push the branch, even if there are no changes, to the remote registry, i.e. `git push`. If the branch was correctly named, it will trigger a workflow in order to create the snapshot release. Once the release has been successful, the branch can be deleted,
+- **If the user has the authorization to publish the NPM package**, he/she can run `yarn snapshot-release <snapshot-name>` and then copy the artifacts to the S3. At this point, the branch can be deleted.
 
 
 ## About deployment
