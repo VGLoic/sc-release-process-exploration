@@ -171,7 +171,9 @@ async function generateDelta() {
         });
     }
 
-    console.log("✅ Delta generation completed.");
+    console.log(
+      "\n✅ Generation of delta between releases has been successfully completed.\n",
+    );
   } catch (err) {
     // If there was an error, remove the new `generated-delta` folder and rename the potential old one back
     await fs

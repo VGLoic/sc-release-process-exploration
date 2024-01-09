@@ -16,16 +16,17 @@ The goal is to satisfy in the simplest way possible the different actors:
 ## Practical release process
 
 Once code is ready to be released,
-1. if not already there, add a changeset describing the changes and the version bump (see the *Release process details* section below for more details),
+1. create a new branch,
+2. if not already there, add a changeset describing the changes and the version bump (see the *Release process details* section below for more details) and commit it,
 ```console
 yarn changeset
 ```
-2. prepare the release artifacts that will define the release, the artifacts will be committed to this repository
+2. prepare the release artifacts that will define the release and commit them,
 ```console
 yarn release:prepare
 ```
-3. commit in a dedicated branch, create a PR and merge it,
-4. merge the automated Changeset PR.
+3. create a pull request against `main`, verify the smart contract artifacts, merge it if it looks good,
+4. an automated Changeset PR will be created (or updated if it already exist), merge it to create the release and publish the NPM package.
 
 ## Release process details
 
