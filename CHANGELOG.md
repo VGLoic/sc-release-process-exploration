@@ -1,5 +1,11 @@
 # sc-release-process-exploration
 
+## 1.3.0
+
+### Minor Changes
+
+- e2e08aa: Update increment count multiplier
+
 ## 1.2.0
 
 ### Minor Changes
