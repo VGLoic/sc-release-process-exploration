@@ -73,16 +73,17 @@ Once step 3. is performed, the rest of the process can be performed. This part i
 ```
 releases
 ├── generated-delta
-|   │   ├── <contract-name>
-|   │   │   ├── <release-name a>.json // No change between release a and b
-|   │   │   ├── <release-name c>.json
-|   │   │   └── ...
-|   │   └── ...
-|   └── build-infos
-|       ├── <release-name a>.json
-|       ├── <release-name b>.json
-|       ├── <release-name c>.json
-|       └── ...
+│   ├── contracts
+│   │   ├── <contract-name>
+│   │   │   ├── <release-name a>.json
+│   │   │   ├── <release-name c>.json // No change between release a and b
+│   │   │   └── ...
+│   │   └── ...
+│   └── build-infos
+│       ├── <release-name a>.json
+│       ├── <release-name b>.json
+│       ├── <release-name c>.json
+│       └── ...
 ├── <release-name a>
 │   └── artifacts
 │       ├── build-info
@@ -121,7 +122,7 @@ dist
 │   ├── <release-name c>.json
 │   ├── <release-name c>.js
 │   ├── <release-name c>.d.ts
-|   └── ...
+│   └── ...
 └── ...
 ```
 6. the `dist` folder is copied in a more friendly exposed `abis` folder for consumers.

@@ -16,11 +16,13 @@ import { findLastRelease, semverStringToSemver, toResult } from "./utils";
  *
  * @dev Assumptions:
  * - The `releases` folder exists and contains the releases of the contracts. It follows the form specified in `prepare-release.ts`.
+ * 
+ * @dev Contracts with same names are not supported for now. For example, if there are two contracts named `Counter` but with different paths, the delta generation will fail.
  *
  * @dev The `generated-delta` folder has the following structure:
  * ```
  * generated-delta
- * ├── artifacts
+ * ├── contracts
  * │   ├── <contract-name>
  * │   │   ├── <release-name a>.json
  * │   │   ├── <release-name b>.json
@@ -147,7 +149,12 @@ async function generateDelta() {
     for (let i = 1; i < orderedReleases.length; i++) {
       const release = orderedReleases[i];
       // We compare the current release with the previous one
-      await compareAndGenerate(release);
+      const result = await compareAndGenerate(release);
+      if (result.empty) {
+        throw new Error(
+          `The release ${release} looks empty. This is not authorized. Please check that there are changes between the releases. You may have to manually delete the './releases/${release}' folder'.`,
+        );
+      }
     }
 
     const hasSnapshotsFolder = await fs
@@ -211,7 +218,7 @@ async function generateDelta() {
  * Initialize the generated delta folder
  * This function is called when we deal with the first release
  * It copies the build info file and the contract artifacts to the generated delta folder
- * The generated delta artifacts are in the form `releases/generated-delta/artifacts/<contract-name>/<release-name>.json`.
+ * The generated delta artifacts are in the form `releases/generated-delta/contracts/<contract-name>/<release-name>.json`.
  * @dev Assumptions:
  * - The `releases/${releaseName}/artifacts/build-info` folder exists and contains the build info file.
  * - The `releases/${releaseName}/artifacts/src` folder exists and contains the contract artifacts.
@@ -220,7 +227,7 @@ async function generateDelta() {
  * The `generated-delta` folder has the general form as below. At the initialization, one should consider only one release.
  * ```
  * generated-delta
- * ├── artifacts
+ * ├── contracts
  * │   ├── <contract-name>
  * │   │   ├── <release-name>.json
  * │   │   └── ...
@@ -242,21 +249,21 @@ async function initGeneratedFiles(releaseName: string) {
     `./releases/generated-delta/build-infos/${releaseName}.json`,
   );
 
-  // Create `releases/generated-delta/artifacts` folder
-  await fs.mkdir("./releases/generated-delta/artifacts");
+  // Create `releases/generated-delta/contracts` folder
+  await fs.mkdir("./releases/generated-delta/contracts");
   // Recursively read `releases/${releaseName}/artifacts/src`
   // Iterate over each contract artifact
   for await (const entry of lookForContractArtifact(
     `./releases/${releaseName}/artifacts/src`,
   )) {
-    // Create releases/generated-delta/artifacts/${contractName} folder
+    // Create releases/generated-delta/contracts/${contractName} folder
     await fs.mkdir(
-      `./releases/generated-delta/artifacts/${entry.contractName}`,
+      `./releases/generated-delta/contracts/${entry.contractName}`,
     );
-    // Copy `releases/${releaseName}/hardhat-output/artifacts/src/${contractName}.sol/${contractName}.json` to `releases/generated-delta/artifacts/${contractName}/${releaseName}.json`
+    // Copy `releases/${releaseName}/hardhat-output/artifacts/src/${contractName}.sol/${contractName}.json` to `releases/generated-delta/contracts/${contractName}/${releaseName}.json`
     await fs.copyFile(
       entry.filePath,
-      `./releases/generated-delta/artifacts/${entry.contractName}/${releaseName}.json`,
+      `./releases/generated-delta/contracts/${entry.contractName}/${releaseName}.json`,
     );
   }
 }
@@ -267,7 +274,7 @@ async function initGeneratedFiles(releaseName: string) {
  * It compares the current artifacts with the previous ones and generates the delta artifacts
  * If the current artifact is different from the previous one based on the bytecode, the current artifact is copied to the generated delta folder.
  * If the current artifact is the same as the previous one, no delta artifact is generated.
- * The generated delta artifacts are in the form `releases/generated-delta/artifacts/<contract-name>/<release-name>.json`.
+ * The generated delta artifacts are in the form `releases/generated-delta/contracts/<contract-name>/<release-name>.json`.
  *
  * If the release is empty, a warning message will be sent.
  *
@@ -278,14 +285,14 @@ async function initGeneratedFiles(releaseName: string) {
  * - The `releases/${releaseName}/artifacts/src` folder exists and contains the contract artifacts.
  * - The contract artifacts are JSON files with an `bytecode` property.
  * - The `releases/generated-delta` folder already exists and contains the generated delta artifacts with the previous releases.
- * - The previously generated delta artifacts are in the form `releases/generated-delta/artifacts/<contract-name>/<release-name>.json`.
+ * - The previously generated delta artifacts are in the form `releases/generated-delta/contracts/<contract-name>/<release-name>.json`.
  *
  * @param releaseName Name of the release
  *
  * The `generated-delta` folder has the general form as below. At the initialization, one should consider only one release.
  * ```
  * generated-delta
- * ├── artifacts
+ * ├── contracts
  * │   ├── <contract-name>
  * │   │   ├── <release-name a>.json
  * │   │   ├── <release-name b>.json
@@ -297,7 +304,7 @@ async function initGeneratedFiles(releaseName: string) {
  *    └── ...
  * ```
  */
-async function compareAndGenerate(releaseName: string) {
+async function compareAndGenerate(releaseName: string): Promise<{ empty: boolean }> {
   // We keep track of the created files and folders, in order to delete them if an error occurs
   let createdFiles = [];
   let createdFolders = [];
@@ -321,19 +328,19 @@ async function compareAndGenerate(releaseName: string) {
   )) {
     // Check if a generated contract folder exists already and retrieve the previous releases
     const previousReleases = await fs
-      .readdir(`./releases/generated-delta/artifacts/${entry.contractName}`)
+      .readdir(`./releases/generated-delta/contracts/${entry.contractName}`)
       .catch(() => [] as string[]);
     // If there are no previous releases, create the folder and copy the artifact
     if (previousReleases.length === 0) {
       await fs.mkdir(
-        `./releases/generated-delta/artifacts/${entry.contractName}`,
+        `./releases/generated-delta/contracts/${entry.contractName}`,
       );
       createdFolders.push(
-        `./releases/generated-delta/artifacts/${entry.contractName}`,
+        `./releases/generated-delta/contracts/${entry.contractName}`,
       );
       await fs.copyFile(
         entry.filePath,
-        `./releases/generated-delta/artifacts/${entry.contractName}/${releaseName}.json`,
+        `./releases/generated-delta/contracts/${entry.contractName}/${releaseName}.json`,
       );
     }
     // If there are previous releases, compare the current artifact with the previous one
@@ -344,7 +351,7 @@ async function compareAndGenerate(releaseName: string) {
       );
       // Read the artifact of the last release
       const lastReleaseArtifact = await fs.readFile(
-        `./releases/generated-delta/artifacts/${entry.contractName}/${lastRelease.name}.json`,
+        `./releases/generated-delta/contracts/${entry.contractName}/${lastRelease.name}.json`,
         "utf-8",
       );
       // Read the artifact of the current release
@@ -358,10 +365,10 @@ async function compareAndGenerate(releaseName: string) {
         // If the bytecode is different, copy the artifact to the current release folder
         await fs.copyFile(
           entry.filePath,
-          `./releases/generated-delta/artifacts/${entry.contractName}/${releaseName}.json`,
+          `./releases/generated-delta/contracts/${entry.contractName}/${releaseName}.json`,
         );
         createdFiles.push(
-          `./releases/generated-delta/artifacts/${entry.contractName}/${releaseName}.json`,
+          `./releases/generated-delta/contracts/${entry.contractName}/${releaseName}.json`,
         );
       }
     }
@@ -372,7 +379,9 @@ async function compareAndGenerate(releaseName: string) {
     console.warn(
       `Only build infos have been created. It looks like the release ${releaseName} is empty.`,
     );
+    return { empty: true };
   }
+  return { empty: false };
 }
 
 /**
@@ -398,18 +407,18 @@ async function copySnapshotArtifacts(snapshotReleaseName: string) {
   )) {
     // Check if a generated contract folder exists already
     const hasContractFolder = await fs
-      .stat(`./releases/generated-delta/artifacts/${entry.contractName}`)
+      .stat(`./releases/generated-delta/contracts/${entry.contractName}`)
       .catch(() => false);
     // If the folder does not exist, create the folder
     if (!hasContractFolder) {
       await fs.mkdir(
-        `./releases/generated-delta/artifacts/${entry.contractName}`,
+        `./releases/generated-delta/contracts/${entry.contractName}`,
       );
     }
     // Copy the artifact
     await fs.copyFile(
       entry.filePath,
-      `./releases/generated-delta/artifacts/${entry.contractName}/${snapshotReleaseName}.json`,
+      `./releases/generated-delta/contracts/${entry.contractName}/${snapshotReleaseName}.json`,
     );
   }
 }
@@ -430,8 +439,20 @@ async function* lookForContractArtifact(
   for (const entry of entries) {
     if (entry.isDirectory()) {
       if (entry.name.endsWith(".sol")) {
-        // Remove the .sol extension
-        const contractName = entry.name.slice(0, -4);
+        // Read the files in the directory
+        const files = await fs.readdir(`${dir}/${entry.name}`)
+        // Check if there is a .dbg.json file and retrieve the name
+        const dbgFile = files.find((f) => f.endsWith('.dbg.json'))
+        // If there is no .dbg.json file, we skip the artifact
+        if (!dbgFile) {
+          continue
+        }
+        const contractName = dbgFile.slice(0, -9)
+        // Check that the .json file exists
+        const hasAssociatedJsonFile = files.some((f) => f === `${contractName}.json`)
+        if (!hasAssociatedJsonFile) {
+          continue
+        }
         yield {
           contractName,
           filePath: `${dir}/${entry.name}/${contractName}.json`,
