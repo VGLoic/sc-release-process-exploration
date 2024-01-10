@@ -28,7 +28,7 @@ import { execSync } from "child_process";
  *   │   └── <build info file name>.json
  *   └── src
  *      ├── <contract-name>.sol
- *      │   └── <contract-name>.dbg.json
+ *      │   ├── <contract-name>.dbg.json
  *      │   └── <contract-name>.json
  *      └── ...
  * ```
@@ -44,7 +44,7 @@ import { execSync } from "child_process";
  * │       │   └── <build info file name>.json
  * │       └── src
  * │           ├── <contract-name>.sol
- * │           │   └── <contract-name>.dbg.json
+ * │           │   ├── <contract-name>.dbg.json
  * │           │   └── <contract-name>.json
  * │           └── ...
  * └── <release-name b>
@@ -53,7 +53,7 @@ import { execSync } from "child_process";
  *         │   └── <build info file name>.json
  *         └── src
  *             ├── <contract-name>.sol
- *             │   └── <contract-name>.dbg.json
+ *             │   ├── <contract-name>.dbg.json
  *             │   └── <contract-name>.json
  *             └── ...
  *
