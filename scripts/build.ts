@@ -14,7 +14,7 @@ import { build as tsupBuild } from "tsup";
  * │   ├── <release-name b>.json
  * │   ├── <release-name b>.js
  * │   ├── <release-name b>.d.ts
- * |   └── ...
+ * │   └── ...
  * └── ...
  * ```
  * The `.json` files will contain the ABI of the contract at the corresponding version.
@@ -48,7 +48,7 @@ import { build as tsupBuild } from "tsup";
  *
  * @dev Assumptions:
  * - The `releases` folder exists and follows the structure described in `scripts/prepare-release.ts`,
- * - The `releases/generated-delta/artifacts` folder exists and contains the generated delta artifacts. See `scripts/generate-delta.ts` for more details and the expected structure.
+ * - The `releases/generated-delta/contracts` folder exists and contains the generated delta artifacts. See `scripts/generate-delta.ts` for more details and the expected structure.
  * - The generated delta artifacts are JSON files with an `abi` property.
  */
 async function build() {
@@ -63,12 +63,12 @@ async function build() {
   }
 
   const hasGeneratedDeltaArtifactsFolder = await fs
-    .stat("./releases/generated-delta/artifacts")
+    .stat("./releases/generated-delta/contracts")
     .catch(() => false);
   if (!hasGeneratedDeltaArtifactsFolder) {
     // Exit if there are no generated delta
     console.error(
-      "❌ Generated delta artifacts folder has not been found at `./releases/generated-delta/artifacts`. Build cancelled.",
+      "❌ Generated delta artifacts folder has not been found at `./releases/generated-delta/contracts`. Build cancelled.",
     );
     process.exitCode = 1;
     return;
@@ -223,7 +223,7 @@ async function fillDistTmpFolder() {
   // Create the `dist-tmp/for-bundle` and the `dist-tmp/json` folders
   await fs.mkdir("./dist-tmp/for-bundle");
   await fs.mkdir("./dist-tmp/json");
-  const entries = await fs.readdir("./releases/generated-delta/artifacts", {
+  const entries = await fs.readdir("./releases/generated-delta/contracts", {
     withFileTypes: true,
   });
   for (const entry of entries) {
@@ -264,7 +264,7 @@ async function* lookForContractAbiVersions(
   contractName: string,
 ): AsyncGenerator<{ version: string; abi: string }> {
   const entries = await fs.readdir(
-    `./releases/generated-delta/artifacts/${contractName}`,
+    `./releases/generated-delta/contracts/${contractName}`,
     { withFileTypes: true },
   );
   for (const entry of entries) {
@@ -277,7 +277,7 @@ async function* lookForContractAbiVersions(
 
       if (versionName) {
         const fileContent = await fs.readFile(
-          `./releases/generated-delta/artifacts/${contractName}/${entry.name}`,
+          `./releases/generated-delta/contracts/${contractName}/${entry.name}`,
           "utf-8",
         );
         // file content is expected to be a JSON object with a `abi` property
