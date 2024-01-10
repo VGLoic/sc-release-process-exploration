@@ -49,7 +49,7 @@ releases
 │       │   └── <build info file name>.json
 │       └── src
 │           ├── <contract-name>.sol
-│           │   └── <contract-name>.dbg.json
+│           │   ├── <contract-name>.dbg.json
 │           │   └── <contract-name>.json
 │           └── ...
 └── <release-name b>
@@ -58,7 +58,7 @@ releases
         │   └── <build info file name>.json
         └── src
             ├── <contract-name>.sol
-            │   └── <contract-name>.dbg.json
+            │   ├── <contract-name>.dbg.json
             │   └── <contract-name>.json
             └── ...
 ```
@@ -89,7 +89,7 @@ releases
 │       │   └── <build info file name>.json
 │       └── src
 │           ├── <contract-name>.sol
-│           │   └── <contract-name>.dbg.json
+│           │   ├── <contract-name>.dbg.json
 │           │   └── <contract-name>.json
 │           └── ...
 ├── <release-name b>
@@ -98,7 +98,7 @@ releases
 │       │   └── <build info file name>.json
 │       └── src
 │           ├── <contract-name>.sol
-│           │   └── <contract-name>.dbg.json
+│           │   ├── <contract-name>.dbg.json
 │           │   └── <contract-name>.json
 │           └── ...
 └── <release-name c>
@@ -107,7 +107,7 @@ releases
         │   └── <build info file name>.json
         └── src
             ├── <contract-name>.sol
-            │   └── <contract-name>.dbg.json
+            │   ├── <contract-name>.dbg.json
             │   └── <contract-name>.json
             └── ...
 ```
