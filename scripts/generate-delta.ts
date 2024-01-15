@@ -16,7 +16,7 @@ import { findLastRelease, semverStringToSemver, toResult } from "./utils";
  *
  * @dev Assumptions:
  * - The `releases` folder exists and contains the releases of the contracts. It follows the form specified in `prepare-release.ts`.
- * 
+ *
  * @dev Contracts with same names are not supported for now. For example, if there are two contracts named `Counter` but with different paths, the delta generation will fail.
  *
  * @dev The `generated-delta` folder has the following structure:
@@ -304,7 +304,9 @@ async function initGeneratedFiles(releaseName: string) {
  *    └── ...
  * ```
  */
-async function compareAndGenerate(releaseName: string): Promise<{ empty: boolean }> {
+async function compareAndGenerate(
+  releaseName: string,
+): Promise<{ empty: boolean }> {
   // We keep track of the created files and folders, in order to delete them if an error occurs
   let createdFiles = [];
   let createdFolders = [];
@@ -356,13 +358,28 @@ async function compareAndGenerate(releaseName: string): Promise<{ empty: boolean
       );
       // Read the artifact of the current release
       const currentReleaseArtifact = await fs.readFile(entry.filePath, "utf-8");
-      // Compare the bytecode of the last release with the current one
+      // Parse the artifacts
       const lastReleaseArtifactJson = JSON.parse(lastReleaseArtifact);
       const currentReleaseArtifactJson = JSON.parse(currentReleaseArtifact);
+      // If the contract is deployable, compare the bytecode of the last release with the current one
+      // If not, we compare the stringified ABI
+      const isDeployable = currentReleaseArtifactJson.bytecode !== "0x";
       if (
+        isDeployable &&
         lastReleaseArtifactJson.bytecode !== currentReleaseArtifactJson.bytecode
       ) {
-        // If the bytecode is different, copy the artifact to the current release folder
+        await fs.copyFile(
+          entry.filePath,
+          `./releases/generated-delta/contracts/${entry.contractName}/${releaseName}.json`,
+        );
+        createdFiles.push(
+          `./releases/generated-delta/contracts/${entry.contractName}/${releaseName}.json`,
+        );
+      } else if (
+        !isDeployable &&
+        JSON.stringify(lastReleaseArtifactJson.abi) !==
+          JSON.stringify(currentReleaseArtifactJson.abi)
+      ) {
         await fs.copyFile(
           entry.filePath,
           `./releases/generated-delta/contracts/${entry.contractName}/${releaseName}.json`,
@@ -440,18 +457,20 @@ async function* lookForContractArtifact(
     if (entry.isDirectory()) {
       if (entry.name.endsWith(".sol")) {
         // Read the files in the directory
-        const files = await fs.readdir(`${dir}/${entry.name}`)
+        const files = await fs.readdir(`${dir}/${entry.name}`);
         // Check if there is a .dbg.json file and retrieve the name
-        const dbgFile = files.find((f) => f.endsWith('.dbg.json'))
+        const dbgFile = files.find((f) => f.endsWith(".dbg.json"));
         // If there is no .dbg.json file, we skip the artifact
         if (!dbgFile) {
-          continue
+          continue;
         }
-        const contractName = dbgFile.slice(0, -9)
+        const contractName = dbgFile.slice(0, -9);
         // Check that the .json file exists
-        const hasAssociatedJsonFile = files.some((f) => f === `${contractName}.json`)
+        const hasAssociatedJsonFile = files.some(
+          (f) => f === `${contractName}.json`,
+        );
         if (!hasAssociatedJsonFile) {
-          continue
+          continue;
         }
         yield {
           contractName,
