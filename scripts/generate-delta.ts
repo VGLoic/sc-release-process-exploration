@@ -1,5 +1,19 @@
 import fs from "fs/promises";
 import { findLastRelease, semverStringToSemver, toResult } from "./utils";
+import path from "node:path";
+import {
+  GENERATED_DELTA_BUILD_INFOS_ARTIFACTS_FOLDER,
+  GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER,
+  GENERATED_DELTA_FOLDER,
+  RELEASES_FOLDER,
+  SNAPSHOTS_RELEASES_FOLDER,
+} from "./constants";
+
+// Old generated delta folder in case of error
+const GENERATED_DELTA_OLD_FOLDER = path.join(
+  RELEASES_FOLDER,
+  "generated-delta-old",
+);
 
 /**
  * Generate the delta artifacts based on the existing releases
@@ -35,11 +49,11 @@ import { findLastRelease, semverStringToSemver, toResult } from "./utils";
  * ```
  */
 async function generateDelta() {
-  const hasReleasesFolder = await fs.stat("./releases").catch(() => false);
+  const hasReleasesFolder = await fs.stat(RELEASES_FOLDER).catch(() => false);
   if (!hasReleasesFolder) {
     // Exit if there are no releases
     console.error(
-      "❌ Releases folder has not been found at `./releases`. It needs to exist to generate the delta between each releases.",
+      `❌ Releases folder has not been found at \`${RELEASES_FOLDER}\`. It needs to exist to generate the delta between each releases.`,
     );
     process.exitCode = 1;
     return;
@@ -47,7 +61,7 @@ async function generateDelta() {
 
   // We retrieve the list of releases
   const previousReleases = await fs
-    .readdir("./releases")
+    .readdir(RELEASES_FOLDER)
     .then((releases) =>
       releases.filter(
         (r) => !["tmp", "generated-delta", "snapshots"].includes(r),
@@ -78,20 +92,20 @@ async function generateDelta() {
   // Remove the current `generated-delta-old` folder
   // Rename the current `generated-delta` folder to `generated-delta-old`
   const hasGeneratedDeltaFolder = await fs
-    .stat("./releases/generated-delta")
+    .stat(GENERATED_DELTA_FOLDER)
     .catch(() => false);
   if (hasGeneratedDeltaFolder) {
     const hasGeneratedDeltaOldFolder = await fs
-      .stat("./releases/generated-delta-old")
+      .stat(GENERATED_DELTA_OLD_FOLDER)
       .catch(() => false);
     if (hasGeneratedDeltaOldFolder) {
       const removeDeltaOldResult = await toResult(
-        fs.rm("./releases/generated-delta-old", { recursive: true }),
+        fs.rm(GENERATED_DELTA_OLD_FOLDER, { recursive: true }),
       );
       if (!removeDeltaOldResult.ok) {
         // Exit if there was an error removing the `generated-delta-old` folder
         console.error(
-          "❌ There was an error removing the `./releases/generated-delta-old` folder. Please remove it manually. Generation cancelled.",
+          `❌ There was an error removing the \`${GENERATED_DELTA_OLD_FOLDER}\` folder. Please remove it manually. Generation cancelled.`,
         );
         console.error(removeDeltaOldResult.error);
         process.exitCode = 1;
@@ -99,12 +113,12 @@ async function generateDelta() {
       }
     }
     const renameResult = await toResult(
-      fs.rename("./releases/generated-delta", "./releases/generated-delta-old"),
+      fs.rename(GENERATED_DELTA_FOLDER, GENERATED_DELTA_OLD_FOLDER),
     );
     if (!renameResult.ok) {
       // Exit if there was an error renaming the `generated-delta` folder
       console.error(
-        "❌ There was an error renaming the `./releases/generated-delta` folder. Generation cancelled. Please check the error and retry.",
+        `❌ There was an error renaming the \`${GENERATED_DELTA_FOLDER}\` folder. Generation cancelled. Please check the error and retry.`,
       );
       console.error(renameResult.error);
       process.exitCode = 1;
@@ -114,12 +128,12 @@ async function generateDelta() {
 
   // Create the new `generated-delta` folder
   const createGeneratedDeltaResult = await toResult(
-    fs.mkdir("./releases/generated-delta"),
+    fs.mkdir(GENERATED_DELTA_FOLDER),
   );
   if (!createGeneratedDeltaResult.ok) {
     // Exit if there was an error creating the `generated-delta` folder
     console.error(
-      "❌ There was an error creating the new `./releases/generated-delta` folder. Generation cancelled. Please check the error and retry.",
+      `❌ There was an error creating the new \`${GENERATED_DELTA_FOLDER}\` folder. Generation cancelled. Please check the error and retry.`,
     );
     console.error(createGeneratedDeltaResult.error);
     process.exitCode = 1;
@@ -152,16 +166,19 @@ async function generateDelta() {
       const result = await compareAndGenerate(release);
       if (result.empty) {
         throw new Error(
-          `The release ${release} looks empty. This is not authorized. Please check that there are changes between the releases. You may have to manually delete the './releases/${release}' folder'.`,
+          `The release ${release} looks empty. This is not authorized. Please check that there are changes between the releases. You may have to manually delete the \'${path.join(
+            RELEASES_FOLDER,
+            release,
+          )}\' folder'.`,
         );
       }
     }
 
     const hasSnapshotsFolder = await fs
-      .stat("./releases/snapshots")
+      .stat(SNAPSHOTS_RELEASES_FOLDER)
       .catch(() => false);
     if (hasSnapshotsFolder) {
-      const snapshots = await fs.readdir("./releases/snapshots");
+      const snapshots = await fs.readdir(SNAPSHOTS_RELEASES_FOLDER);
       for (const snapshot of snapshots) {
         await copySnapshotArtifacts(snapshot);
       }
@@ -169,13 +186,11 @@ async function generateDelta() {
 
     // Remove the old `generated-delta` folder if it exists
     if (hasGeneratedDeltaFolder) {
-      await fs
-        .rm("./releases/generated-delta-old", { recursive: true })
-        .catch(() => {
-          console.warn(
-            "⚠️ There was an error removing the `generated-delta-old` folder. Please remove it manually.",
-          );
-        });
+      await fs.rm(GENERATED_DELTA_OLD_FOLDER, { recursive: true }).catch(() => {
+        console.warn(
+          `⚠️ There was an error removing the \`${GENERATED_DELTA_OLD_FOLDER}\` folder. Please remove it manually.`,
+        );
+      });
     }
 
     console.log(
@@ -183,27 +198,24 @@ async function generateDelta() {
     );
   } catch (err) {
     // If there was an error, remove the new `generated-delta` folder and rename the potential old one back
-    await fs
-      .rm("./releases/generated-delta", { recursive: true })
-      .catch((e) => {
-        console.warn(
-          "⚠️ There was an error removing the new `./releases/generated-delta` folder. Please remove it manually.",
-        );
-        console.warn(e);
-      });
+    await fs.rm(GENERATED_DELTA_FOLDER, { recursive: true }).catch((e) => {
+      console.warn(
+        `⚠️ There was an error removing the new \`${GENERATED_DELTA_FOLDER}\` folder. Please remove it manually.`,
+      );
+      console.warn(e);
+    });
     const hasGeneratedDeltaOldFolder = await fs
-      .stat("./releases/generated-delta-old")
+      .stat(GENERATED_DELTA_OLD_FOLDER)
       .catch(() => false);
     if (hasGeneratedDeltaOldFolder) {
-      fs.rename(
-        "./releases/generated-delta-old",
-        "./releases/generated-delta",
-      ).catch((e) => {
-        console.warn(
-          "⚠️ There was an error renaming the `./releases/generated-delta-old` folder back to `./releases/generated-delta`. Please rename it manually.",
-        );
-        console.warn(e);
-      });
+      fs.rename(GENERATED_DELTA_OLD_FOLDER, GENERATED_DELTA_FOLDER).catch(
+        (e) => {
+          console.warn(
+            `⚠️ There was an error renaming the \`${GENERATED_DELTA_OLD_FOLDER}\` folder back to \`${GENERATED_DELTA_FOLDER}\`. Please rename it manually.`,
+          );
+          console.warn(e);
+        },
+      );
     }
     console.error(
       "❌ Delta generation failed. Please check the error and retry.",
@@ -238,32 +250,40 @@ async function generateDelta() {
  * ```
  */
 async function initGeneratedFiles(releaseName: string) {
+  const releasePath = path.join(RELEASES_FOLDER, releaseName);
   // Create `releases/generated-delta/build-infos` folder
-  await fs.mkdir("./releases/generated-delta/build-infos");
+  await fs.mkdir(GENERATED_DELTA_BUILD_INFOS_ARTIFACTS_FOLDER);
   // Copy `releases/${releaseName}/artifacts/build-info/<build info file name>.json` to `releases/generated-delta/build-infos/${releaseName}.json`
   const buildInfoFileName = (
-    await fs.readdir(`./releases/${releaseName}/artifacts/build-info`)
+    await fs.readdir(path.join(releasePath, "artifacts", "build-info"))
   )[0];
   await fs.copyFile(
-    `./releases/${releaseName}/artifacts/build-info/${buildInfoFileName}`,
-    `./releases/generated-delta/build-infos/${releaseName}.json`,
+    path.join(releasePath, "artifacts", "build-info", buildInfoFileName),
+    path.join(
+      GENERATED_DELTA_BUILD_INFOS_ARTIFACTS_FOLDER,
+      `${releaseName}.json`,
+    ),
   );
 
   // Create `releases/generated-delta/contracts` folder
-  await fs.mkdir("./releases/generated-delta/contracts");
+  await fs.mkdir(GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER);
   // Recursively read `releases/${releaseName}/artifacts/src`
   // Iterate over each contract artifact
   for await (const entry of lookForContractArtifact(
-    `./releases/${releaseName}/artifacts/src`,
+    path.join(releasePath, "artifacts", "src"),
   )) {
     // Create releases/generated-delta/contracts/${contractName} folder
     await fs.mkdir(
-      `./releases/generated-delta/contracts/${entry.contractName}`,
+      path.join(GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER, entry.contractName),
     );
     // Copy `releases/${releaseName}/hardhat-output/artifacts/src/${contractName}.sol/${contractName}.json` to `releases/generated-delta/contracts/${contractName}/${releaseName}.json`
     await fs.copyFile(
       entry.filePath,
-      `./releases/generated-delta/contracts/${entry.contractName}/${releaseName}.json`,
+      path.join(
+        GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER,
+        entry.contractName,
+        `${releaseName}.json`,
+      ),
     );
   }
 }
@@ -307,42 +327,65 @@ async function initGeneratedFiles(releaseName: string) {
 async function compareAndGenerate(
   releaseName: string,
 ): Promise<{ empty: boolean }> {
+  const releasePath = path.join(RELEASES_FOLDER, releaseName);
+
   // We keep track of the created files and folders, in order to delete them if an error occurs
   let createdFiles = [];
   let createdFolders = [];
 
   // Copy `releases/${releaseName}/artifacts/build-info/<build info file name>.json` to `releases/generated-delta/build-infos/${releaseName}.json`
   const buildInfoFileName = (
-    await fs.readdir(`./releases/${releaseName}/artifacts/build-info`)
+    await fs.readdir(path.join(releasePath, "artifacts", "build-info"))
   )[0];
   await fs.copyFile(
-    `./releases/${releaseName}/artifacts/build-info/${buildInfoFileName}`,
-    `./releases/generated-delta/build-infos/${releaseName}.json`,
+    path.join(releasePath, "artifacts", "build-info", buildInfoFileName),
+    path.join(
+      GENERATED_DELTA_BUILD_INFOS_ARTIFACTS_FOLDER,
+      `${releaseName}.json`,
+    ),
   );
   createdFiles.push(
-    `./releases/generated-delta/build-infos/${releaseName}.json`,
+    path.join(
+      GENERATED_DELTA_BUILD_INFOS_ARTIFACTS_FOLDER,
+      `${releaseName}.json`,
+    ),
   );
 
   // Recursively read releases/${releaseName}/artifacts/src
   // Iterate over each contract artifact and compare it with the previous release
   for await (const entry of lookForContractArtifact(
-    `./releases/${releaseName}/artifacts/src`,
+    path.join(releasePath, "artifacts", "src"),
   )) {
     // Check if a generated contract folder exists already and retrieve the previous releases
     const previousReleases = await fs
-      .readdir(`./releases/generated-delta/contracts/${entry.contractName}`)
+      .readdir(
+        path.join(
+          GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER,
+          entry.contractName,
+        ),
+      )
       .catch(() => [] as string[]);
     // If there are no previous releases, create the folder and copy the artifact
     if (previousReleases.length === 0) {
       await fs.mkdir(
-        `./releases/generated-delta/contracts/${entry.contractName}`,
+        path.join(
+          GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER,
+          entry.contractName,
+        ),
       );
       createdFolders.push(
-        `./releases/generated-delta/contracts/${entry.contractName}`,
+        path.join(
+          GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER,
+          entry.contractName,
+        ),
       );
       await fs.copyFile(
         entry.filePath,
-        `./releases/generated-delta/contracts/${entry.contractName}/${releaseName}.json`,
+        path.join(
+          GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER,
+          entry.contractName,
+          `${releaseName}.json`,
+        ),
       );
     }
     // If there are previous releases, compare the current artifact with the previous one
@@ -353,7 +396,11 @@ async function compareAndGenerate(
       );
       // Read the artifact of the last release
       const lastReleaseArtifact = await fs.readFile(
-        `./releases/generated-delta/contracts/${entry.contractName}/${lastRelease.name}.json`,
+        path.join(
+          GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER,
+          entry.contractName,
+          `${lastRelease.name}.json`,
+        ),
         "utf-8",
       );
       // Read the artifact of the current release
@@ -370,10 +417,18 @@ async function compareAndGenerate(
       ) {
         await fs.copyFile(
           entry.filePath,
-          `./releases/generated-delta/contracts/${entry.contractName}/${releaseName}.json`,
+          path.join(
+            GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER,
+            entry.contractName,
+            `${releaseName}.json`,
+          ),
         );
         createdFiles.push(
-          `./releases/generated-delta/contracts/${entry.contractName}/${releaseName}.json`,
+          path.join(
+            GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER,
+            entry.contractName,
+            `${releaseName}.json`,
+          ),
         );
       } else if (
         !isDeployable &&
@@ -382,10 +437,18 @@ async function compareAndGenerate(
       ) {
         await fs.copyFile(
           entry.filePath,
-          `./releases/generated-delta/contracts/${entry.contractName}/${releaseName}.json`,
+          path.join(
+            GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER,
+            entry.contractName,
+            `${releaseName}.json`,
+          ),
         );
         createdFiles.push(
-          `./releases/generated-delta/contracts/${entry.contractName}/${releaseName}.json`,
+          path.join(
+            GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER,
+            entry.contractName,
+            `${releaseName}.json`,
+          ),
         );
       }
     }
@@ -406,36 +469,53 @@ async function compareAndGenerate(
  * @param snapshotReleaseName Name of the snapshot release
  */
 async function copySnapshotArtifacts(snapshotReleaseName: string) {
+  const snapshotPath = path.join(
+    SNAPSHOTS_RELEASES_FOLDER,
+    snapshotReleaseName,
+  );
   // Copy `releases/${snapshotReleaseName}/artifacts/build-info/<build info file name>.json` to `releases/generated-delta/build-infos/${snapshotReleaseName}.json`
   const buildInfoFileName = (
-    await fs.readdir(
-      `./releases/snapshots/${snapshotReleaseName}/artifacts/build-info`,
-    )
+    await fs.readdir(path.join(snapshotPath, "artifacts", "build-info"))
   )[0];
   await fs.copyFile(
-    `./releases/snapshots/${snapshotReleaseName}/artifacts/build-info/${buildInfoFileName}`,
-    `./releases/generated-delta/build-infos/${snapshotReleaseName}.json`,
+    path.join(snapshotPath, "artifacts", "build-info", buildInfoFileName),
+    path.join(
+      GENERATED_DELTA_BUILD_INFOS_ARTIFACTS_FOLDER,
+      `${snapshotReleaseName}.json`,
+    ),
   );
 
   // Recursively read releases/snapshots/${snapshotReleaseName}/artifacts/src
   // Iterate over each contract artifact
   for await (const entry of lookForContractArtifact(
-    `./releases/snapshots/${snapshotReleaseName}/artifacts/src`,
+    path.join(snapshotPath, "artifacts", "src"),
   )) {
     // Check if a generated contract folder exists already
     const hasContractFolder = await fs
-      .stat(`./releases/generated-delta/contracts/${entry.contractName}`)
+      .stat(
+        path.join(
+          GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER,
+          entry.contractName,
+        ),
+      )
       .catch(() => false);
     // If the folder does not exist, create the folder
     if (!hasContractFolder) {
       await fs.mkdir(
-        `./releases/generated-delta/contracts/${entry.contractName}`,
+        path.join(
+          GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER,
+          entry.contractName,
+        ),
       );
     }
     // Copy the artifact
     await fs.copyFile(
       entry.filePath,
-      `./releases/generated-delta/contracts/${entry.contractName}/${snapshotReleaseName}.json`,
+      path.join(
+        GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER,
+        entry.contractName,
+        `${snapshotReleaseName}.json`,
+      ),
     );
   }
 }

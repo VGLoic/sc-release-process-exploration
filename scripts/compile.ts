@@ -1,7 +1,9 @@
+import path from "node:path";
 import fs from "fs/promises";
 import getReleasePlan from "@changesets/get-release-plan";
 import { findLastRelease, semverStringToSemver, toResult } from "./utils";
 import { execSync } from "child_process";
+import { RELEASES_FOLDER, RELEASES_TMP_FOLDER } from "./constants";
 
 /**
  * Compile the contracts for the next release and copy the artifacts to the `releases` folder.
@@ -70,21 +72,21 @@ async function compileForRelease() {
     return;
   }
 
-  const hasReleasesFolder = await fs.stat("./releases").catch(() => false);
+  const hasReleasesFolder = await fs.stat(RELEASES_FOLDER).catch(() => false);
   if (!hasReleasesFolder) {
     // Exit if there are no releases
     console.error(
-      "❌ Releases folder has not been found at `./releases`. It should either alreay exist, or have been previously created by the hardhat compilation.",
+      `❌ Releases folder has not been found at \`${RELEASES_FOLDER}\`. It should either alreay exist, or have been previously created by the hardhat compilation.`,
     );
     process.exitCode = 1;
     return;
   }
 
-  const hasTmpFolder = await fs.stat("./releases/tmp").catch(() => false);
+  const hasTmpFolder = await fs.stat(RELEASES_TMP_FOLDER).catch(() => false);
   if (!hasTmpFolder) {
     // Exit if there are no tmp folder
     console.error(
-      "❌ Tmp folder has not been found at `./releases/tmp`. It should have been previously created by the hardhat compilation.",
+      `❌ Tmp folder has not been found at \`${RELEASES_TMP_FOLDER}\`. It should have been previously created by the hardhat compilation.`,
     );
     process.exitCode = 1;
     return;
@@ -97,9 +99,9 @@ async function compileForRelease() {
         ? "❌ No new release has been prepared. Please make sure to have added a changeset by using `yarn changeset` and try again."
         : "❌ Unexpected error: multiple releases have been prepared. Only one is expected. Please check the release plan and try again.";
     console.error(text);
-    await fs.rm("./releases/tmp", { recursive: true }).catch(() => {
+    await fs.rm(RELEASES_TMP_FOLDER, { recursive: true }).catch(() => {
       console.warn(
-        `⚠️ An error occured while deleting the \`./releases/tmp\` folder. Please delete it manually and try again.`,
+        `⚠️ An error occured while deleting the \`${RELEASES_TMP_FOLDER}\` folder. Please delete it manually and try again.`,
       );
     });
     process.exitCode = 1;
@@ -112,19 +114,21 @@ async function compileForRelease() {
     console.error(
       `❌ Unexpected error: the new release version ${newReleaseVersion} is not a valid semver. Please check the release plan and try again.`,
     );
-    await fs.rm("./releases/tmp", { recursive: true }).catch(() => {
+    await fs.rm(RELEASES_TMP_FOLDER, { recursive: true }).catch(() => {
       console.warn(
-        `⚠️ An error occured while deleting the \`./releases/tmp\` folder. Please delete it manually and try again.`,
+        `⚠️ An error occured while deleting the \`${RELEASES_TMP_FOLDER}\` folder. Please delete it manually and try again.`,
       );
     });
     process.exitCode = 1;
     return;
   }
 
-  // Check if there are previous releases by retrieving all the folders in `./releases` folder
+  const releasePath = path.join(RELEASES_FOLDER, newReleaseVersion);
+
+  // Check if there are previous releases by retrieving all the folders in \`${RELEASES_FOLDER}\` folder
   // and filter out the `tmp`, `generated-delta` and `snapshots` folders
   const previousReleases = await fs
-    .readdir("./releases")
+    .readdir(RELEASES_FOLDER)
     .then((releases) =>
       releases.filter(
         (r) => !["tmp", "generated-delta", "snapshots"].includes(r),
@@ -134,16 +138,16 @@ async function compileForRelease() {
     // If there are no previous releases
     // We rename the `./releases/tmp` to `./releases/${newReleaseVersion}`
     const renameResult = await toResult(
-      fs.rename("./releases/tmp", `./releases/${newReleaseVersion}`),
+      fs.rename(RELEASES_TMP_FOLDER, releasePath),
     );
     if (!renameResult.ok) {
       console.error(
-        "❌ An error occured while creating the first release. The `./releases` folder will be deleted. Please check the error below and try again.",
+        `❌ An error occured while creating the first release. The \`${RELEASES_FOLDER}\` folder will be deleted. Please check the error below and try again.`,
       );
       console.error(renameResult.error);
-      await fs.rm("./releases", { recursive: true }).catch(() => {
+      await fs.rm(RELEASES_FOLDER, { recursive: true }).catch(() => {
         console.warn(
-          "⚠️ An error occured while deleting the `./releases` folder. Please delete it manually and try again.",
+          `⚠️ An error occured while deleting the \`${RELEASES_FOLDER}\` folder. Please delete it manually and try again.`,
         );
       });
       process.exitCode = 1;
@@ -159,11 +163,11 @@ async function compileForRelease() {
     );
     if (invalidReleases.length > 0) {
       console.error(`❌ Invalid release names have been found. They should be valid semver.
-            The \`./releases/tmp\` folder will be deleted. Please inspect or delete manually the invalid releases and try again.
+            The \`${RELEASES_TMP_FOLDER}\` folder will be deleted. Please inspect or delete manually the invalid releases and try again.
             Invalid releases: ${invalidReleases.join(", ")}`);
-      await fs.rm("./releases/tmp", { recursive: true }).catch(() => {
+      await fs.rm(RELEASES_TMP_FOLDER, { recursive: true }).catch(() => {
         console.warn(
-          `⚠️ An error occured while deleting the \`./releases/tmp\` folder. Please delete it manually and try again.`,
+          `⚠️ An error occured while deleting the \`${RELEASES_TMP_FOLDER}\` folder. Please delete it manually and try again.`,
         );
       });
       process.exitCode = 1;
@@ -183,9 +187,9 @@ async function compileForRelease() {
       console.error(
         `❌ The new release ${newReleaseVersion} is not after the last release ${lastRelease.name}. Please check the release plan and try again.`,
       );
-      await fs.rm("./releases/tmp", { recursive: true }).catch(() => {
+      await fs.rm(RELEASES_TMP_FOLDER, { recursive: true }).catch(() => {
         console.warn(
-          `⚠️ An error occured while deleting the \`./releases/tmp\` folder. Please delete it manually and try again.`,
+          `⚠️ An error occured while deleting the \`${RELEASES_TMP_FOLDER}\` folder. Please delete it manually and try again.`,
         );
       });
       process.exitCode = 1;
@@ -193,16 +197,16 @@ async function compileForRelease() {
     }
     // 2. we rename the `./releases/tmp` to `./releases/${newReleaseVersion}`
     const renameResult = await toResult(
-      fs.rename("./releases/tmp", `./releases/${newReleaseVersion}`),
+      fs.rename(RELEASES_TMP_FOLDER, releasePath),
     );
     if (!renameResult.ok) {
       console.error(
-        `❌ An error occured while creating the next release. The \`./releases/tmp\` folder will be deleted. Please check the error below and try again.`,
+        `❌ An error occured while creating the next release. The \`${RELEASES_TMP_FOLDER}\` folder will be deleted. Please check the error below and try again.`,
       );
       console.error(renameResult.error);
-      await fs.rm("./releases/tmp", { recursive: true }).catch(() => {
+      await fs.rm(RELEASES_TMP_FOLDER, { recursive: true }).catch(() => {
         console.warn(
-          `⚠️ An error occured while deleting the \`./releases/tmp\` folder. Please delete it manually and try again.`,
+          `⚠️ An error occured while deleting the \`${RELEASES_TMP_FOLDER}\` folder. Please delete it manually and try again.`,
         );
       });
       process.exitCode = 1;

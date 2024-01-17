@@ -1,6 +1,19 @@
 import fs from "fs/promises";
 import { toResult } from "./utils";
 import { build as tsupBuild } from "tsup";
+import path from "node:path";
+import {
+  DIST_FOLDER,
+  GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER,
+  RELEASES_FOLDER,
+} from "./constants";
+
+// Temporary `dist-tmp` folder for storing the files waiting to be bundled
+const DIST_TMP_FOLDER = path.join(__dirname, "../../dist-tmp");
+const DIST_TMP_FOLDER_FOR_BUNDLE = path.join(DIST_TMP_FOLDER, "for-bundle");
+const DIST_TMP_FOLDER_JSON = path.join(DIST_TMP_FOLDER, "json");
+// Old `dist` folder in case the build fails
+const DIST_OLD_FOLDER = path.join(__dirname, "../../dist-old");
 
 /**
  * Based on the releases and generated delta artifacts folders,
@@ -52,38 +65,38 @@ import { build as tsupBuild } from "tsup";
  * - The generated delta artifacts are JSON files with an `abi` property.
  */
 async function build() {
-  const hasReleasesFolder = await fs.stat("./releases").catch(() => false);
+  const hasReleasesFolder = await fs.stat(RELEASES_FOLDER).catch(() => false);
   if (!hasReleasesFolder) {
     // Exit if there are no releases
     console.error(
-      "❌ Releases folder has not been found at `./releases`. Build cancelled.",
+      `❌ Releases folder has not been found at \`${RELEASES_FOLDER}\`. Build cancelled.`,
     );
     process.exitCode = 1;
     return;
   }
 
   const hasGeneratedDeltaArtifactsFolder = await fs
-    .stat("./releases/generated-delta/contracts")
+    .stat(GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER)
     .catch(() => false);
   if (!hasGeneratedDeltaArtifactsFolder) {
     // Exit if there are no generated delta
     console.error(
-      "❌ Generated delta artifacts folder has not been found at `./releases/generated-delta/contracts`. Build cancelled.",
+      `❌ Generated delta artifacts folder has not been found at \`${GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER}\`. Build cancelled.`,
     );
     process.exitCode = 1;
     return;
   }
 
   // Remove the `dist-tmp` folder if it exists
-  const hasDistTmpFolder = await fs.stat("./dist-tmp").catch(() => false);
+  const hasDistTmpFolder = await fs.stat(DIST_TMP_FOLDER).catch(() => false);
   if (hasDistTmpFolder) {
     const removeDistTmpResult = await toResult(
-      fs.rm("./dist-tmp", { recursive: true }),
+      fs.rm(DIST_TMP_FOLDER, { recursive: true }),
     );
     if (!removeDistTmpResult.ok) {
       // Exit if there was an error removing the `dist-tmp` folder
       console.error(
-        "❌ There was an error removing the `dist-tmp` folder. Please remove it manually. Build cancelled.",
+        `❌ There was an error removing the \`${DIST_TMP_FOLDER}\` folder. Please remove it manually. Build cancelled.`,
       );
       console.error(removeDistTmpResult.error);
       process.exitCode = 1;
@@ -91,11 +104,11 @@ async function build() {
     }
   }
   // Create the `dist-tmp` folder
-  const createDistTmpResult = await toResult(fs.mkdir("./dist-tmp"));
+  const createDistTmpResult = await toResult(fs.mkdir(DIST_TMP_FOLDER));
   if (!createDistTmpResult.ok) {
     // Exit if there was an error creating the `dist` folder
     console.error(
-      "❌ There was an error creating the new `dist-tmp` folder. Build cancelled. Please check the error and retry.",
+      `❌ There was an error creating the new \`${DIST_TMP_FOLDER}\` folder. Build cancelled. Please check the error and retry.`,
     );
     console.error(createDistTmpResult.error);
     process.exitCode = 1;
@@ -105,14 +118,14 @@ async function build() {
   // Fill the new `dist-tmp` folder
   const fillDistTmpFolderResult = await toResult(fillDistTmpFolder());
   if (!fillDistTmpFolderResult.ok) {
-    await fs.rm("./dist-tmp", { recursive: true }).catch((e) => {
+    await fs.rm(DIST_TMP_FOLDER, { recursive: true }).catch((e) => {
       console.warn(
-        "⚠️ There was an error removing the `dist-tmp` folder. Please remove it manually.",
+        `⚠️ There was an error removing the \`${DIST_TMP_FOLDER}\` folder. Please remove it manually.`,
       );
       console.warn(e);
     });
     console.error(
-      "❌ There was an error filling the new `dist-tmp` folder. Build cancelled. Please check the error and retry.",
+      `❌ There was an error filling the new \`${DIST_TMP_FOLDER}\` folder. Build cancelled. Please check the error and retry.`,
     );
     console.error(fillDistTmpFolderResult.error);
     process.exitCode = 1;
@@ -122,28 +135,30 @@ async function build() {
   // If `dist` folder exists
   // Remove the current `dist-old` folder
   // Rename the current `dist` folder to `dist-old`
-  const hasDistFolder = await fs.stat("./dist").catch(() => false);
+  const hasDistFolder = await fs.stat(DIST_FOLDER).catch(() => false);
   if (hasDistFolder) {
-    const hasDistOldFolder = await fs.stat("./dist-old").catch(() => false);
+    const hasDistOldFolder = await fs.stat(DIST_OLD_FOLDER).catch(() => false);
     if (hasDistOldFolder) {
       const removeDistOldResult = await toResult(
-        fs.rm("./dist-old", { recursive: true }),
+        fs.rm(DIST_OLD_FOLDER, { recursive: true }),
       );
       if (!removeDistOldResult.ok) {
         // Exit if there was an error removing the `dist-old` folder
         console.error(
-          "❌ There was an error removing the `dist-old` folder. Please remove it manually. Build cancelled.",
+          `❌ There was an error removing the \`${DIST_OLD_FOLDER}\` folder. Please remove it manually. Build cancelled.`,
         );
         console.error(removeDistOldResult.error);
         process.exitCode = 1;
         return;
       }
     }
-    const renameResult = await toResult(fs.rename("./dist", "./dist-old"));
+    const renameResult = await toResult(
+      fs.rename(DIST_FOLDER, DIST_OLD_FOLDER),
+    );
     if (!renameResult.ok) {
       // Exit if there was an error renaming the `dist` folder
       console.error(
-        "❌ There was an error renaming the `dist` folder. Build cancelled. Please check the error and retry.",
+        `❌ There was an error renaming the \`${DIST_FOLDER}\` folder. Build cancelled. Please check the error and retry.`,
       );
       console.error(renameResult.error);
       process.exitCode = 1;
@@ -154,23 +169,23 @@ async function build() {
   // Bundle the `dist-tmp` folder
   try {
     await tsupBuild({
-      entry: ["./dist-tmp/for-bundle"],
+      entry: [DIST_TMP_FOLDER_FOR_BUNDLE],
       dts: true,
       format: ["cjs", "esm"],
-      publicDir: "./dist-tmp/json",
+      publicDir: DIST_TMP_FOLDER_JSON,
     });
     // Remove the `dist-tmp` folder
-    await fs.rm("./dist-tmp", { recursive: true }).catch((e) => {
+    await fs.rm(DIST_TMP_FOLDER, { recursive: true }).catch((e) => {
       console.warn(
-        "⚠️ There was an error removing the `dist-tmp` folder. Please remove it manually.",
+        `⚠️ There was an error removing the \`${DIST_TMP_FOLDER}\` folder. Please remove it manually.`,
       );
       console.warn(e);
     });
     // Remove the old `dist` folder if it exists
     if (hasDistFolder) {
-      await fs.rm("./dist-old", { recursive: true }).catch((e) => {
+      await fs.rm(DIST_OLD_FOLDER, { recursive: true }).catch((e) => {
         console.warn(
-          "⚠️ There was an error removing the old `dist` folder. Please remove it manually.",
+          `⚠️ There was an error removing the old \`${DIST_FOLDER}\` folder. Please remove it manually.`,
         );
         console.warn(e);
       });
@@ -178,41 +193,44 @@ async function build() {
     console.log("\n✅ Build for the exposed ABIs is successful.\n");
   } catch (err) {
     // If there was an error, remove the `dist-tmp` folder, remove the new `dist` folder if it exists, and rename the old `dist` folder back to `dist`
-    const hasDistTmpFolder = await fs.stat("./dist-tmp").catch(() => false);
+    const hasDistTmpFolder = await fs.stat(DIST_TMP_FOLDER).catch(() => false);
     if (hasDistTmpFolder) {
-      await fs.rm("./dist-tmp", { recursive: true }).catch((e) => {
+      await fs.rm(DIST_TMP_FOLDER, { recursive: true }).catch((e) => {
         console.warn(
-          "⚠️ There was an error removing the `dist-tmp` folder. Please remove it manually.",
+          `⚠️ There was an error removing the \`${DIST_TMP_FOLDER}\` folder. Please remove it manually.`,
         );
         console.warn(e);
       });
     }
-    const hasDistFolder = await fs.stat("./dist").catch(() => false);
+    const hasDistFolder = await fs.stat(DIST_FOLDER).catch(() => false);
     if (hasDistFolder) {
-      await fs.rm("./dist", { recursive: true }).catch((e) => {
+      await fs.rm(DIST_FOLDER, { recursive: true }).catch((e) => {
         console.warn(
-          "⚠️ There was an error removing the new `dist` folder. Please remove it manually.",
+          `⚠️ There was an error removing the new \`${DIST_FOLDER}\` folder. Please remove it manually.`,
         );
         console.warn(e);
       });
     }
-    const hasDistOldFolder = await fs.stat("./dist-old").catch(() => false);
+    const hasDistOldFolder = await fs.stat(DIST_OLD_FOLDER).catch(() => false);
     if (hasDistOldFolder) {
-      fs.rename("./dist-old", "./dist").catch((e) => {
+      fs.rename(DIST_OLD_FOLDER, DIST_FOLDER).catch((e) => {
         console.warn(
-          "⚠️ There was an error renaming the `dist-old` folder back to `dist`. Please rename it manually.",
+          `⚠️ There was an error renaming the \`${DIST_OLD_FOLDER}\` folder back to \`${DIST_FOLDER}\`. Please rename it manually.`,
         );
         console.warn(e);
       });
     }
     console.error(
-      "❌ There was an error filling the new `dist` folder. Build cancelled. Please check the error and retry.",
+      `❌ There was an error filling the new \`${DIST_FOLDER}\` folder. Build cancelled. Please check the error and retry.`,
     );
     console.error(err);
     process.exitCode = 1;
     return;
   }
 }
+
+path.join;
+path.resolve;
 
 /**
  * Fills the `dist-tmp` folder with the ABI of the contracts at each version.
@@ -221,9 +239,9 @@ async function build() {
  */
 async function fillDistTmpFolder() {
   // Create the `dist-tmp/for-bundle` and the `dist-tmp/json` folders
-  await fs.mkdir("./dist-tmp/for-bundle");
-  await fs.mkdir("./dist-tmp/json");
-  const entries = await fs.readdir("./releases/generated-delta/contracts", {
+  await fs.mkdir(DIST_TMP_FOLDER_FOR_BUNDLE);
+  await fs.mkdir(DIST_TMP_FOLDER_JSON);
+  const entries = await fs.readdir(GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER, {
     withFileTypes: true,
   });
   for (const entry of entries) {
@@ -231,8 +249,8 @@ async function fillDistTmpFolder() {
     if (entry.isDirectory()) {
       // Create the contract folder for the bundle and the json
       const contractName = entry.name;
-      await fs.mkdir(`./dist-tmp/for-bundle/${contractName}`);
-      await fs.mkdir(`./dist-tmp/json/${contractName}`);
+      await fs.mkdir(path.join(DIST_TMP_FOLDER_FOR_BUNDLE, contractName));
+      await fs.mkdir(path.join(DIST_TMP_FOLDER_JSON, contractName));
       // For each version,
       //  1. Create a <version>.json file
       //  2. Create a <version>.ts file
@@ -240,11 +258,11 @@ async function fillDistTmpFolder() {
         contractName,
       )) {
         await fs.writeFile(
-          `./dist-tmp/json/${contractName}/${version}.json`,
+          path.join(DIST_TMP_FOLDER_JSON, contractName, `${version}.json`),
           abi,
         );
         await fs.writeFile(
-          `./dist-tmp/for-bundle/${contractName}/${version}.ts`,
+          path.join(DIST_TMP_FOLDER_FOR_BUNDLE, contractName, `${version}.ts`),
           `export const abi = ${abi} as const;`,
         );
       }
@@ -263,10 +281,11 @@ async function fillDistTmpFolder() {
 async function* lookForContractAbiVersions(
   contractName: string,
 ): AsyncGenerator<{ version: string; abi: string }> {
-  const entries = await fs.readdir(
-    `./releases/generated-delta/contracts/${contractName}`,
-    { withFileTypes: true },
+  const contractPath = path.join(
+    GENERATED_DELTA_CONTRACTS_ARTIFACTS_FOLDER,
+    contractName,
   );
+  const entries = await fs.readdir(contractPath, { withFileTypes: true });
   for (const entry of entries) {
     // Only files are expected
     if (entry.isFile()) {
@@ -277,7 +296,7 @@ async function* lookForContractAbiVersions(
 
       if (versionName) {
         const fileContent = await fs.readFile(
-          `./releases/generated-delta/contracts/${contractName}/${entry.name}`,
+          path.join(contractPath, entry.name),
           "utf-8",
         );
         // file content is expected to be a JSON object with a `abi` property
