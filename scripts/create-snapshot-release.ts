@@ -8,6 +8,12 @@ import { getPackages } from "@manypkg/get-packages";
 import { readPreState } from "@changesets/pre";
 import { execSync } from "child_process";
 import { toResult } from "./utils";
+import path from "node:path";
+import {
+  RELEASES_FOLDER,
+  RELEASES_TMP_FOLDER,
+  SNAPSHOTS_RELEASES_FOLDER,
+} from "./constants";
 
 async function createSnapshotRelease() {
   const args = process.argv.slice(2);
@@ -19,13 +25,18 @@ async function createSnapshotRelease() {
     return;
   }
 
+  const snapshotReleasePath = path.join(
+    SNAPSHOTS_RELEASES_FOLDER,
+    snapshotName,
+  );
+
   // Check if the `./releases/snapshots/<snapshot-name>` folder already exists
   const hasSnapshotFolder = await fs
-    .stat(`./releases/snapshots/${snapshotName}`)
+    .stat(snapshotReleasePath)
     .catch(() => false);
   if (hasSnapshotFolder) {
     console.error(
-      `❌ Snapshot release folder \`./releases/snapshots/${snapshotName}\` already exists. Please choose another name for the snapshot and try again. If it is an error, delete it and try again.`,
+      `❌ Snapshot release folder \`${snapshotReleasePath}\` already exists. Please choose another name for the snapshot and try again. If it is an error, delete it and try again.`,
     );
     process.exitCode = 1;
     return;
@@ -43,11 +54,11 @@ async function createSnapshotRelease() {
     console.error(err);
 
     // If the `tmp` folder exists, we delete it
-    const hasTmpFolder = await fs.stat("./releases/tmp").catch(() => false);
+    const hasTmpFolder = await fs.stat(RELEASES_TMP_FOLDER).catch(() => false);
     if (hasTmpFolder) {
-      await fs.rm("./releases/tmp", { recursive: true }).catch(() => {
+      await fs.rm(RELEASES_TMP_FOLDER, { recursive: true }).catch(() => {
         console.warn(
-          `⚠️ An error occured while deleting the \`./releases/tmp\` folder. Please delete it manually and try again.`,
+          `⚠️ An error occured while deleting the \`${RELEASES_TMP_FOLDER}\` folder. Please delete it manually and try again.`,
         );
       });
     }
@@ -84,28 +95,30 @@ async function createSnapshotRelease() {
 }
 
 async function deleteSnapshotRelease(snapshotName: string) {
+  const snapshotReleasePath = path.join(
+    SNAPSHOTS_RELEASES_FOLDER,
+    snapshotName,
+  );
   const hasSnapshotFolder = await fs
-    .stat(`./releases/snapshots/${snapshotName}`)
+    .stat(snapshotReleasePath)
     .catch(() => false);
   if (hasSnapshotFolder) {
-    await fs
-      .rm(`./releases/snapshots/${snapshotName}`, { recursive: true })
-      .catch(() => {
-        console.warn(
-          `⚠️ An error occured while deleting the \`./releases/snapshots/${snapshotName}\` folder. Please delete it manually and try again.`,
-        );
-      });
+    await fs.rm(snapshotReleasePath, { recursive: true }).catch(() => {
+      console.warn(
+        `⚠️ An error occured while deleting the \`${snapshotReleasePath}\` folder. Please delete it manually and try again.`,
+      );
+    });
   }
 
   const hasSnapshotsFolder = await fs
-    .stat("./releases/snapshots")
+    .stat(SNAPSHOTS_RELEASES_FOLDER)
     .catch(() => false);
   if (hasSnapshotsFolder) {
-    const snapshotsFolderContent = await fs.readdir("./releases/snapshots");
+    const snapshotsFolderContent = await fs.readdir(SNAPSHOTS_RELEASES_FOLDER);
     if (snapshotsFolderContent.length === 0) {
-      await fs.rm("./releases/snapshots", { recursive: true }).catch(() => {
+      await fs.rm(SNAPSHOTS_RELEASES_FOLDER, { recursive: true }).catch(() => {
         console.warn(
-          `⚠️ An error occured while deleting the \`./releases/snapshots\` folder. Please delete it manually and try again.`,
+          `⚠️ An error occured while deleting the \`${SNAPSHOTS_RELEASES_FOLDER}\` folder. Please delete it manually and try again.`,
         );
       });
     }
@@ -113,34 +126,38 @@ async function deleteSnapshotRelease(snapshotName: string) {
 }
 
 async function copySnapshotCompilation(snapshotName: string) {
-  const hasReleasesFolder = await fs.stat("./releases").catch(() => false);
+  const snapshotReleasePath = path.join(
+    SNAPSHOTS_RELEASES_FOLDER,
+    snapshotName,
+  );
+  const hasReleasesFolder = await fs.stat(RELEASES_FOLDER).catch(() => false);
   if (!hasReleasesFolder) {
     // Exit if there are no releases
     console.error(
-      "❌ Releases folder has not been found at `./releases`. It should either alreay exist, or have been previously created by the hardhat compilation.",
+      `❌ Releases folder has not been found at \`${RELEASES_FOLDER}\`. It should either alreay exist, or have been previously created by the hardhat compilation.`,
     );
     throw new Error("Releases folder not found");
   }
 
-  const hasTmpFolder = await fs.stat("./releases/tmp").catch(() => false);
+  const hasTmpFolder = await fs.stat(RELEASES_TMP_FOLDER).catch(() => false);
   if (!hasTmpFolder) {
     // Exit if there are no tmp folder
     console.error(
-      "❌ Tmp folder has not been found at `./releases/tmp`. It should have been previously created by the hardhat compilation.",
+      `❌ Tmp folder has not been found at \`${RELEASES_TMP_FOLDER}\`. It should have been previously created by the hardhat compilation.`,
     );
     throw new Error("Tmp folder not found");
   }
 
   // Create the `./releases/smapshots` folder if it doesn't exist
   const hasSnapshotsFolder = await fs
-    .stat("./releases/snapshots")
+    .stat(SNAPSHOTS_RELEASES_FOLDER)
     .catch(() => false);
   if (!hasSnapshotsFolder) {
-    await fs.mkdir("./releases/snapshots", { recursive: true });
+    await fs.mkdir(SNAPSHOTS_RELEASES_FOLDER, { recursive: true });
   }
 
   // Rename the `./releases/tmp` folder to `./releases/snapshots/<snapshot-name>`
-  await fs.rename("./releases/tmp", `./releases/snapshots/${snapshotName}`);
+  await fs.rename(RELEASES_TMP_FOLDER, snapshotReleasePath);
 }
 
 async function createDummyChangesetSnapshotRelease(snapshotName: string) {
