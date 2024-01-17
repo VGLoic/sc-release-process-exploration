@@ -1,7 +1,7 @@
 import path from "node:path";
 
 // Releases folder
-export const RELEASES_FOLDER = path.join(__dirname, "../../releases");
+export const RELEASES_FOLDER = path.join(__dirname, "../releases");
 // Generated delta releases folder
 export const GENERATED_DELTA_FOLDER = path.join(
   RELEASES_FOLDER,
@@ -22,7 +22,7 @@ export const SNAPSHOTS_RELEASES_FOLDER = path.join(
 );
 
 // Final `dist` folder of bundled artifacts
-export const DIST_FOLDER = path.join(__dirname, "../../dist");
+export const DIST_FOLDER = path.join(__dirname, "../dist");
 
 // Tmp folder used by the hardhat compilation
 export const RELEASES_TMP_FOLDER = path.join(RELEASES_FOLDER, "tmp");
