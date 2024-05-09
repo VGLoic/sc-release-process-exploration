@@ -49,11 +49,9 @@ jobs:
             // 2. Create new comment with diff
             let output = `#### Release Plan Output
                 \`\`\`
-                Diff: ${{ steps.artifacts-diff.outputs.result }}
+                Diff
                 \`\`\`
                 `;
-            output += diff;          
-            output += \`\`\`;
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
