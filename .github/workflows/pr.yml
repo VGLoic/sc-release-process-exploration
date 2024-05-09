@@ -50,7 +50,6 @@ jobs:
             console.log(typeof ${{ steps.artifacts-diff.outputs.result }}); // Debugging
             let output = "#### Release Plan Output";
             output += "\n```";
-            output += "\nDiff";
             for (const diff of ${{ steps.artifacts-diff.outputs.result }}) {
               output += "\n";
               output += `- ${diff.name} (${diff.path}): ${diff.status}`;
