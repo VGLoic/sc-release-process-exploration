@@ -1,0 +1,22 @@
+name: Pull Request workflow
+
+on:
+  pull_request:
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  simulate-release:
+    name: "Simulate Release"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.13
+      - name: Install dependencies
+        run: yarn
+      - name: Create temporary release artifacts
+        run: yarn compile
