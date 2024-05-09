@@ -47,12 +47,11 @@ jobs:
               return comment.user.type === 'Bot' && comment.body.includes('Release Plan Output')
             });
             // 2. Create new comment with diff
-            console.log(${{ steps.artifacts-diff.outputs.result }}); // Debugging
-            let output = `#### Release Plan Output
-                \`\`\`
-                Diff: JSON.stringify(${{ steps.artifacts-diff.outputs.result }})
-                \`\`\`
-                `;
+            console.log(typeof ${{ steps.artifacts-diff.outputs.result }}); // Debugging
+            let output = "#### Release Plan Output";
+            output += "\n```";
+            output += "Diff";
+            output += "\n```";
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
