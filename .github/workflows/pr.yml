@@ -9,6 +9,9 @@ jobs:
   simulate-release:
     name: "Simulate Release"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,3 +23,10 @@ jobs:
         run: yarn
       - name: Create temporary release artifacts
         run: yarn compile
+      - name: Create diff between artifacts and latest release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { generateDiffWithLatest } = await import('${{ github.workspace }}/scripts/v2-exploration/diff-with-latest.ts');
+            const diff = await generateDiffWithLatest();
+            console.log(diff);
