@@ -10,20 +10,18 @@ jobs:
     name: "Simulate Release"
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20.13
       - name: Install dependencies
         run: yarn
-      - name: Create temporary release artifacts
+      - name: Create artifacts
         run: yarn compile
       - name: Compile scripts
         run: yarn scripts:compile
@@ -76,13 +74,3 @@ jobs:
                 comment_id: existingBotComment.id,
               });
             }
-      - name: Commit latest release artifacts
-        run: |
-          build_info_filename=$(ls -AU artifacts/build-info | head -1)
-          mkdir -p releases/latest
-          cp -r artifacts/build-info/$build_info_filename releases/latest/build-info.json
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "update latest release artifacts"
-          git push
