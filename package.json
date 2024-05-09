@@ -17,8 +17,7 @@
     "release": "yarn release:generate-delta && yarn release:build && yarn release:copy-dist && yarn changeset publish",
     "create-snapshot-release": "ts-node --files scripts/create-snapshot-release.ts",
     "deploy:counter": "HARDHAT_NETWORK=maticmum ts-node --files scripts/deploy-counter.ts",
-    "diff-with-latest": "ts-node --files scripts/v2-exploration/diff-with-latest.ts",
-    "scripts:compile": "tsup scripts/v2-exploration"
+    "diff-with-latest": "ts-node --files scripts/v2/diff-with-latest.ts"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.1",
