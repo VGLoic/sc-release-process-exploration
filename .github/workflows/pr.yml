@@ -59,6 +59,7 @@ jobs:
               }
               output += "\n```";
             }
+            output += "\nComparison is made between the latest release artifacts and the current artifacts generated from the PR code."
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
