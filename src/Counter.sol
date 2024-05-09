@@ -3,7 +3,7 @@ pragma solidity 0.8.13;
 
 import {IncrementOracle} from "./IncrementOracle.sol";
 
-contract Counter {
+contract Counter2 {
     uint256 public counter;
 
     function increment() public {
