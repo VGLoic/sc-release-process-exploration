@@ -31,6 +31,10 @@ The associated workflows have been made:
 - main.yml: compile the artifacts, copy them in `releases/latest` and commit the changes in `main` branch,
 - releases.yml: compile the artifacts, copy them in `releases/<tag name>` and commit the changes in the release branch.
 
+## Release manager
+
+[Changesets](https://github.com/changesets/changesets) is used in order to manage releases here but any other tools can be freely chosen.
+
 ## What needs to be done
 
 - Storing artifacts outside of the repository,

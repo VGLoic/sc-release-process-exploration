@@ -33,6 +33,8 @@ jobs:
           cp -r artifacts/build-info/$build_info_filename releases/$RELEASE_TAG/build-info.json
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "update release artifacts"
-          git push
+          if [[ `git status --porcelain` ]]; then
+            git add .
+            git commit -m "update latest release artifacts"
+            git push
+          fi
