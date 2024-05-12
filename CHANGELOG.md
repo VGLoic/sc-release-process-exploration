@@ -1,5 +1,11 @@
 # sc-release-process-exploration
 
+## 1.3.1
+
+### Patch Changes
+
+- 84a6beb: test release workflow
+
 ## 1.3.0
 
 ### Minor Changes
