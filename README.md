@@ -95,5 +95,4 @@ const deployCounter: DeployFunction = async function (
 ## What needs to be done
 
 - Storing artifacts outside of the repository,
-- Exploration for NPM package,
-- Exploration for deployment.
+- Exploration for NPM package.
