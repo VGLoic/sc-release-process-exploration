@@ -16,8 +16,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: main
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -26,7 +24,11 @@ jobs:
         run: yarn
       - name: Create artifacts
         run: yarn compile
-      - name: Commit release artifacts
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Commit release artifacts on main
         env:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
