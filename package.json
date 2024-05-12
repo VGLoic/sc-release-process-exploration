@@ -8,7 +8,7 @@
   "scripts": {
     "format:contracts": "prettier --write --plugin=prettier-plugin-solidity 'src/**/*.sol'",
     "format": "prettier --write --plugin=prettier-plugin-solidity 'src/**/*.sol' 'scripts/**/*.ts'",
-    "compile": "yarn format && hardhat compile",
+    "compile": "yarn format:contracts && hardhat compile --force --no-typechain",
     "release:compile": "yarn format:contracts && ts-node --files scripts/compile.ts",
     "release:generate-delta": "ts-node --files scripts/generate-delta.ts",
     "release:build": "ts-node --files scripts/build.ts",
@@ -16,7 +16,9 @@
     "release:prepare": "yarn release:compile && yarn release:generate-delta && yarn release:build && yarn release:copy-dist",
     "release": "yarn release:generate-delta && yarn release:build && yarn release:copy-dist && yarn changeset publish",
     "create-snapshot-release": "ts-node --files scripts/create-snapshot-release.ts",
-    "deploy:counter": "HARDHAT_NETWORK=maticmum ts-node --files scripts/deploy-counter.ts"
+    "deploy:counter": "HARDHAT_NETWORK=maticmum ts-node --files scripts/deploy-counter.ts",
+    "diff-with-latest": "ts-node --files scripts/v2/diff-with-latest.ts",
+    "scripts:compile": "tsup scripts/v2"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.1",
@@ -44,6 +46,7 @@
     "ts-node": ">=8.0.0",
     "tsup": "^8.0.1",
     "typechain": "^8.1.0",
-    "typescript": ">=4.5.0"
+    "typescript": ">=4.5.0",
+    "zod": "^3.23.8"
   }
 }
