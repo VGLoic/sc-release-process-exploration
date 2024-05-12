@@ -15,3 +15,7 @@ cache_hardhat
 dist
 abis
 generated-delta
+
+# Releases files
+releases/generated
+deployments/localhost

@@ -31,6 +31,63 @@ The associated workflows have been made:
 - main.yml: compile the artifacts, copy them in `releases/latest` and commit the changes in `main` branch,
 - releases.yml: compile the artifacts, copy them in `releases/<tag name>` and commit the changes in the `main` branch.
 
+### Deployments
+
+When dealing with a list of releases, deployments must take into account which release we're considering. For each release, only a set of contracts is available.
+
+As we can't rely on the usual integration of Hardhat or `hardhat-deploy`, helper scripts have been made in order to retrieve a contract artifact for a given name and a given release. Once the artifact retrieved, one should deploy using directly the artifact, so using the `bytecode`, `abi`, etc... Even if this means a bit more work, the advantage is that we are now working with fixed artifacts that can no longer be modified.
+
+The helper scripts are based on a "releases summary" that needs to be generated beforehand, i.e.
+
+```console
+# Generate ignored `releases/generated/summary.ts` file
+yarn generate-releases-summary
+```
+
+Once the summary, one can use the helpes defined in `scripts/v2/artifacts.ts`. As an example, here is the script for deploying the current contracts for latest release using `hardhat-deploy`
+
+```ts
+// deploy/00-deploy-counter.ts
+const deployCounter: DeployFunction = async function (
+  hre: HardhatRuntimeEnvironment,
+) {
+  const { deployer } = await hre.getNamedAccounts();
+
+  const incrementOracleArtifact = await contract(
+    "src/IncrementOracle.sol/IncrementOracle",
+  ).getArtifact("latest");
+  const incrementOracleDeployment = await hre.deployments.deploy(
+    "IncrementOracle@latest",
+    {
+      contract: {
+        abi: incrementOracleArtifact.abi,
+        bytecode: incrementOracleArtifact.evm.bytecode.object,
+        metadata: incrementOracleArtifact.metadata,
+      },
+      from: deployer,
+      log: true,
+    },
+  );
+
+  const counterArtifact = await contract("src/Counter.sol/Counter").getArtifact(
+    "latest",
+  );
+  await hre.deployments.deploy("Counter@latest", {
+    contract: {
+      abi: counterArtifact.abi,
+      bytecode: counterArtifact.evm.bytecode.object,
+      metadata: counterArtifact.metadata,
+    },
+    libraries: {
+      "src/IncrementOracle.sol:IncrementOracle":
+        incrementOracleDeployment.address,
+    },
+    from: deployer,
+    log: true,
+  });
+};
+```
+
 ## Version/Release manager
 
 [Changesets](https://github.com/changesets/changesets) is used in order to manage versions here but any other tools can be freely chosen.
@@ -38,5 +95,4 @@ The associated workflows have been made:
 ## What needs to be done
 
 - Storing artifacts outside of the repository,
-- Exploration for NPM package,
-- Exploration for deployment.
+- Exploration for NPM package.
