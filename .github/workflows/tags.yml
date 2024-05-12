@@ -28,6 +28,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
+          clean: false
       - name: Commit release artifacts on main
         env:
           RELEASE_TAG: ${{ github.ref_name }}
