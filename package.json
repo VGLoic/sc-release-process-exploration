@@ -18,7 +18,9 @@
     "create-snapshot-release": "ts-node --files scripts/create-snapshot-release.ts",
     "deploy:counter": "HARDHAT_NETWORK=maticmum ts-node --files scripts/deploy-counter.ts",
     "diff-with-latest": "ts-node --files scripts/v2/diff-with-latest.ts",
-    "scripts:compile": "tsup scripts/v2"
+    "scripts:compile": "tsup scripts/v2",
+    "generate-releases-summary": "ts-node --files scripts/v2/generate-releases-summary.ts",
+    "hardhat:node": "hardhat node"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.1",
