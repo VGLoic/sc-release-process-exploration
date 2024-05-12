@@ -22,14 +22,14 @@ For now, the process is to have:
   - stored in `releases/latest/build-info.json`,
   - updated on push on `main` branch.
 - as many as we want other releases:
-  - stored in `releases/<release name>/build-info.json` in `main` branch,
+  - stored in `releases/<release name>/build-info.json` in the release branch,
   - created on releases.
 
 The associated workflows have been made:
 
 - pr.yml: compile the artifacts, create a diff with the artifacts in `latest` release and publish a comment on the PR of the list of differences,
 - main.yml: compile the artifacts, copy them in `releases/latest` and commit the changes in `main` branch,
-- releases.yml: compile the artifacts, copy them in `releases/<tag name>` and commit the changes in `main` branch.
+- releases.yml: compile the artifacts, copy them in `releases/<tag name>` and commit the changes in the release branch.
 
 ## What needs to be done
 
