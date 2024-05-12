@@ -37,8 +37,3 @@ jobs:
             git commit -m "update release artifacts"
             git push
           fi
-      - name: Create Release Pull Request or Create release
-        id: changesets
-        uses: changesets/action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
