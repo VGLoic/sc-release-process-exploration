@@ -14,26 +14,26 @@ The goal is to satisfy in the simplest way possible the different actors:
 
 ## What has been done in this iteration
 
-The piece of interest in a Hardhat compilation is the `build info` file. This iteration focuses on simply storing and using this file for each release.
+The piece of interest in a Hardhat compilation is the `build info` file. This iteration focuses on simply storing and using this file for each release. Everything is stored on the `main` branch.
 
 For now, the process is to have:
 
 - a `latest` release:
   - stored in `releases/latest/build-info.json`,
   - updated on push on `main` branch.
-- as many as we want other releases:
-  - stored in `releases/<release name>/build-info.json` in the release branch,
-  - created on releases.
+- as many as we want other releases, identified by `tag`:
+  - stored in `releases/<tag name>/build-info.json` in the `main` branch,
+  - created on push on tags.
 
 The associated workflows have been made:
 
 - pr.yml: compile the artifacts, create a diff with the artifacts in `latest` release and publish a comment on the PR of the list of differences,
 - main.yml: compile the artifacts, copy them in `releases/latest` and commit the changes in `main` branch,
-- releases.yml: compile the artifacts, copy them in `releases/<tag name>` and commit the changes in the release branch.
+- releases.yml: compile the artifacts, copy them in `releases/<tag name>` and commit the changes in the `main` branch.
 
-## Release manager
+## Version/Release manager
 
-[Changesets](https://github.com/changesets/changesets) is used in order to manage releases here but any other tools can be freely chosen.
+[Changesets](https://github.com/changesets/changesets) is used in order to manage versions here but any other tools can be freely chosen.
 
 ## What needs to be done
 

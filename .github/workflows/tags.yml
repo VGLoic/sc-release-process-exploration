@@ -1,14 +1,15 @@
 name: Releases workflow
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - "**"
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   release:
-    name: Release
+    name: Copy release artifacts on main
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -23,7 +24,11 @@ jobs:
         run: yarn
       - name: Create artifacts
         run: yarn compile
-      - name: Commit release artifacts
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Commit release artifacts on main
         env:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
@@ -34,6 +39,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if [[ `git status --porcelain` ]]; then
             git add .
-            git commit -m "update release artifacts"
+            git commit -m "update release artifacts for $RELEASE_TAG"
             git push
           fi
