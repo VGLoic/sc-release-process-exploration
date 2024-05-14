@@ -6,30 +6,67 @@ A first iteration is explained in this [document](README-v1.md).
 
 ## Motivation
 
-The goal is to satisfy in the simplest way possible the different actors:
+There are two main problems we are trying to address here.
 
-- Smart contract developers want to develop in an isolated way and not worrying about modifying artifacts of previous releases,
-- Smart contract "DevOps" want to have a simple way to create a freeze of the code at a certain point in time and create the associated artifacts. The artifacts should be sufficient for any later uses such as deployments, transactions, Etherscan verifications or generation of packages for downstream uses,
-- Backend and Frontend developers want to have a simple and safe way to interact with a contract given its release version.
+### 1. Compilation artifacts of previous releases are often lost
 
-## What has been done in this iteration
+In many occasions, the artifacts are not commited in the repository and are therefore lost just after the contracts have been deployed. It may create all kind of annoying issues:
 
-The piece of interest in a Hardhat compilation is the `build info` file. This iteration focuses on simply storing and using this file for each release. Everything is stored on the `main` branch.
+- not being able to re-deploy the exact same contracts or verify the contracts afterwards because the metadata have changed,
+- having hard times interacting with the deployed contracts because the ABIs have changed.
 
-For now, the process is to have:
+As a smart contract developer, I want to be able to develop in an isolated way without worrying about modifying artifacts of previous releases.
 
-- a `latest` release:
-  - stored in `releases/latest/build-info.json`,
-  - updated on push on `main` branch.
-- as many as we want other releases, identified by `tag`:
-  - stored in `releases/<tag name>/build-info.json` in the `main` branch,
-  - created on push on tags.
+And as a smart contract "dev ops", I want to be able to create a freeze of the code at a certain point in time and create the associated artifacts. The artifacts should be sufficient for any later uses such as deployments, transactions, Etherscan verifications or generation of packages for downstream uses.
 
-The associated workflows have been made:
+### 2. Sharing compilation artifacts and deployment addresses is often messy
 
-- pr.yml: compile the artifacts, create a diff with the artifacts in `latest` release and publish a comment on the PR of the list of differences,
-- main.yml: compile the artifacts, copy them in `releases/latest` and commit the changes in `main` branch,
-- releases.yml: compile the artifacts, copy them in `releases/<tag name>` and commit the changes in the `main` branch.
+In many projects, ABIs and addresses are copy pasted. While this is fine in some simple cases, it is generally an important source of mistakes.
+
+As a backend or frontend developer, I want to be able to access the releases artifacts and the deployment addresses.
+
+## Goals
+
+Solving the issues above can probably be done in many ways and will strongly depend on the project at hand.
+
+However, let's try to define and implement some standard paths.
+
+In each case, we are interested of managing multiple releases:
+
+- the ones associated with particular `tag`, e.g. `v1.0.0`,
+- `latest` associated with the latest state of the codebase. This release evolves with the codebase.
+
+### About compilation artifacts
+
+Once a compilation with Hardhat has been made, a bunch of artifacts are generated. In particular, a `build info` file is generated and contains all the informations related to the compilation. The other artifacts are actually only some extracts from this core artifact.
+
+**That is way we will try to only keep track of this `build info` file as single artifact for each release.**
+
+### Path #1: the repository keeps everything
+
+In this version, **we commit the release files and the deployments directly in the repository**.
+
+We store the releases artifacts in the `releases` folder which is committed on the `main` branch. Different GitHub workflows will help us having this folder up to date:
+
+- on `push` on `main`: the `latest` release is created or updated,
+- on `push` on `tags`: the `<tag>` release is created,
+- on `pull request`: nothing is updated but we generate a diff with the current state of the `latest` release.
+
+Deployments will be stored in the `deployments` folder which is commited on the `main` branch too. Scripts are written in the repository in order to deploy contracts based on the artifacts contained in the `releases` folder.
+
+A NPM package is created in order to share the ABIs and the deployments.
+
+## Details about current iteration: `Path #1: the repository keeps everything`
+
+Once a compilation with Hardhat has been made, a bunch of artifacts are generated. In particular, a `build info` file is generated and contains all the informations related to the compilation. The other artifacts are actually only some extracts from this core artifact.
+
+In this iteration, we focus only on keeping track of this `build info` file for each release.
+
+Currently, we store the releases and their build info files in the `releases` folder which is committed on the `main` branch. Different GitHub workflows will help us having this folder up to date:
+
+- on `push` on `main`: the `latest` release is created or updated,
+- on `push` on `tags`: the `<tag>` release is created,
+- on `pull request`: nothing is updated but we generate a diff with the current state of the `latest` release.
 
 ### Deployments
 
