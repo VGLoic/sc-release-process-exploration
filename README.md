@@ -34,13 +34,13 @@ However, let's try to define and implement some standard paths.
 In each case, we are interested of managing multiple releases:
 
 - the ones associated with particular `tag`, e.g. `v1.0.0`,
-- `latest` associated with the latest state of the codebase. This release evolves with the codebase.
+- the `latest` associated with the latest state of the codebase. This release evolves with the codebase.
 
 ### About compilation artifacts
 
 Once a compilation with Hardhat has been made, a bunch of artifacts are generated. In particular, a `build info` file is generated and contains all the informations related to the compilation. The other artifacts are actually only some extracts from this core artifact.
 
-**That is way we will try to only keep track of this `build info` file as single artifact for each release.**
+**That is why we will try to only keep track of this `build info` file as single artifact for each release.**
 
 ### Path #1: the repository keeps everything
 
@@ -58,15 +58,44 @@ A NPM package is created in order to share the ABIs and the deployments.
 
 ## Details about current iteration: `Path #1: the repository keeps everything`
 
-Once a compilation with Hardhat has been made, a bunch of artifacts are generated. In particular, a `build info` file is generated and contains all the informations related to the compilation. The other artifacts are actually only some extracts from this core artifact.
+The `main.yml` workflow file contains the heart of the artifacts release process
 
-In this iteration, we focus only on keeping track of this `build info` file for each release.
+```yaml
+jobs:
+  release:
+    name: Release latest
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.10
+      - name: Install dependencies
+        run: yarn
+      - name: Create artifacts
+        run: yarn compile
+      - name: Commit release artifacts
+        env:
+          RELEASE_TAG: latest
+        run: |
+          build_info_filename=$(ls -AU artifacts/build-info | head -1)
+          mkdir -p releases/$RELEASE_TAG
+          cp -r artifacts/build-info/$build_info_filename releases/$RELEASE_TAG/build-info.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [[ `git status --porcelain` ]]; then
+            git add .
+            git commit -m "update latest release artifacts"
+            git push
+          fi
+```
 
-Currently, we store the releases and their build info files in the `releases` folder which is committed on the `main` branch. Different GitHub workflows will help us having this folder up to date:
-
-- on `push` on `main`: the `latest` release is created or updated,
-- on `push` on `tags`: the `<tag>` release is created,
-- on `pull request`: nothing is updated but we generate a diff with the current state of the `latest` release.
+The `tags.yaml` worfklow will handle all the other releases and will be quite similar in terms of jobs.
 
 ### Deployments
 
