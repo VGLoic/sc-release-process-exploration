@@ -6,6 +6,8 @@ import {IncrementOracle} from "./IncrementOracle.sol";
 contract Counter {
     uint256 public counter;
 
+    string constant a = "LOL";
+
     function increment() public {
         uint256 incrementAmount = IncrementOracle.getIncrement();
         counter += incrementAmount * 3;

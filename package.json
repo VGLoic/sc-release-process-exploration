@@ -20,7 +20,8 @@
     "diff-with-latest": "ts-node --files scripts/v2/diff-with-latest.ts",
     "scripts:compile": "tsup scripts/v2/diff-with-latest.ts",
     "generate-releases-summary": "ts-node --files scripts/v2/generate-releases-summary.ts",
-    "hardhat:node": "hardhat node"
+    "hardhat:node": "hardhat node",
+    "fun": "ts-node --files scripts/v2/fun.ts"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.1",
