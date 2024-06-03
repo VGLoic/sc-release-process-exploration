@@ -3,24 +3,21 @@
   "version": "1.3.1",
   "license": "MIT",
   "files": [
-    "abis"
+    "abis",
+    "deploymens-summary.json"
   ],
   "scripts": {
     "format:contracts": "prettier --write --plugin=prettier-plugin-solidity 'src/**/*.sol'",
     "format": "prettier --write --plugin=prettier-plugin-solidity 'src/**/*.sol' 'scripts/**/*.ts'",
     "compile": "yarn format:contracts && hardhat compile --force --no-typechain",
-    "release:compile": "yarn format:contracts && ts-node --files scripts/compile.ts",
-    "release:generate-delta": "ts-node --files scripts/generate-delta.ts",
-    "release:build": "ts-node --files scripts/build.ts",
-    "release:copy-dist": "ts-node --files scripts/copy-dist.ts",
-    "release:prepare": "yarn release:compile && yarn release:generate-delta && yarn release:build && yarn release:copy-dist",
-    "release": "yarn release:generate-delta && yarn release:build && yarn release:copy-dist && yarn changeset publish",
-    "create-snapshot-release": "ts-node --files scripts/create-snapshot-release.ts",
+    "release": "yarn release:build-exposed-abis && yarn release:build-deployments-summary && yarn changeset publish",
     "deploy:counter": "HARDHAT_NETWORK=maticmum ts-node --files scripts/deploy-counter.ts",
-    "diff-with-latest": "ts-node --files scripts/v2/diff-with-latest.ts",
-    "scripts:compile": "tsup scripts/v2/diff-with-latest.ts",
-    "generate-releases-summary": "ts-node --files scripts/v2/generate-releases-summary.ts",
-    "hardhat:node": "hardhat node"
+    "diff-with-latest": "ts-node --files scripts/diff-with-latest.ts",
+    "scripts:compile": "tsup scripts/diff-with-latest.ts",
+    "generate-releases-summary": "ts-node --files scripts/generate-releases-summary.ts",
+    "hardhat:node": "hardhat node",
+    "release:build-exposed-abis": "ts-node --files scripts/build-exposed-abis.ts",
+    "release:build-deployments-summary": "ts-node --files scripts/build-deployments-summary.ts"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.1",

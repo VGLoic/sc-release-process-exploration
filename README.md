@@ -110,7 +110,14 @@ The helper scripts are based on a "releases summary" that needs to be generated 
 yarn generate-releases-summary
 ```
 
-Once the summary, one can use the helpes defined in `scripts/v2/artifacts.ts`. As an example, here is the script for deploying the current contracts for latest release using `hardhat-deploy`
+REMIND ME TODO:
+
+1. fix type `BuildInfo`,
+2. write about deployment in README,
+3. cleanup?
+4. handle same contract within release?
+
+Once the summary, one can use the helpes defined in `scripts/artifacts.ts`. As an example, here is the script for deploying the current contracts for latest release using `hardhat-deploy`
 
 ```ts
 // deploy/00-deploy-counter.ts

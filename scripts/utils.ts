@@ -243,3 +243,29 @@ async function verifyContractOnce(payload: VerifyPayload) {
     throw err;
   }
 }
+
+import { z } from "zod";
+
+export function toAsyncResult<T, TError = Error>(
+  promise: Promise<T>,
+): Promise<{ ok: true; value: T } | { ok: false; error: TError }> {
+  return promise
+    .then((value) => ({ ok: true as const, value }))
+    .catch((error) => ({ ok: false as const, error }));
+}
+
+export const ZContractInfo = z.object({
+  abi: z.array(z.object({ name: z.string() })),
+  evm: z.object({
+    bytecode: z.object({
+      object: z.string(),
+    }),
+    deployedBytecode: z.object({}),
+  }),
+  metadata: z.string(),
+});
+export const ZBuildInfo = z.object({
+  output: z.object({
+    contracts: z.record(z.string(), z.record(z.string(), ZContractInfo)),
+  }),
+});

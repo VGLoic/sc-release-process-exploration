@@ -1,6 +1,6 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import { contract } from "../scripts/v2/artifacts";
+import { contract } from "../scripts/artifacts";
 
 const deployCounter: DeployFunction = async function (
   hre: HardhatRuntimeEnvironment,
