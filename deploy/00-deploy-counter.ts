@@ -4,6 +4,8 @@ import { contract, getReleaseBuildInfo } from "../scripts/artifacts";
 import { verifyContract } from "../scripts/utils";
 import { ethers } from "ethers";
 
+const TARGET_RELEASE = "v1.3.1";
+
 const deployCounter: DeployFunction = async function (
   hre: HardhatRuntimeEnvironment,
 ) {
@@ -16,17 +18,19 @@ const deployCounter: DeployFunction = async function (
     balance: ethers.formatEther(balance),
   });
 
-  const latestBuildInfo = await getReleaseBuildInfo("latest").catch((error) => {
-    console.error("Error getting build info", error);
-    process.exit(1);
-  });
+  const latestBuildInfo = await getReleaseBuildInfo(TARGET_RELEASE).catch(
+    (error) => {
+      console.error("Error getting build info", error);
+      process.exit(1);
+    },
+  );
 
   const incrementOracleArtifact = await contract(
     "src/IncrementOracle.sol:IncrementOracle",
-  ).getArtifact("latest");
+  ).getArtifact(TARGET_RELEASE);
 
   const incrementOracleDeployment = await hre.deployments.deploy(
-    "IncrementOracle@latest",
+    `IncrementOracle@${TARGET_RELEASE}`,
     {
       contract: {
         abi: incrementOracleArtifact.abi,
@@ -49,21 +53,24 @@ const deployCounter: DeployFunction = async function (
   }
 
   const counterArtifact = await contract("src/Counter.sol:Counter").getArtifact(
-    "latest",
+    "v1.3.1",
   );
-  const counterDeployment = await hre.deployments.deploy("Counter@latest", {
-    contract: {
-      abi: counterArtifact.abi,
-      bytecode: counterArtifact.evm.bytecode.object,
-      metadata: counterArtifact.metadata,
+  const counterDeployment = await hre.deployments.deploy(
+    `Counter@${TARGET_RELEASE}`,
+    {
+      contract: {
+        abi: counterArtifact.abi,
+        bytecode: counterArtifact.evm.bytecode.object,
+        metadata: counterArtifact.metadata,
+      },
+      libraries: {
+        "src/IncrementOracle.sol:IncrementOracle":
+          incrementOracleDeployment.address,
+      },
+      from: deployer,
+      log: true,
     },
-    libraries: {
-      "src/IncrementOracle.sol:IncrementOracle":
-        incrementOracleDeployment.address,
-    },
-    from: deployer,
-    log: true,
-  });
+  );
 
   if (hre.network.verify) {
     await verifyContract({

@@ -110,14 +110,6 @@ The helper scripts are based on a "releases summary" that needs to be generated 
 yarn generate-releases-summary
 ```
 
-REMIND ME TODO:
-
-1. fix type `BuildInfo`, -> DONE
-2. write about deployment in README,
-3. handle verification -> DONE,
-4. cleanup?
-5. handle same contract within release?
-
 Once the summary, one can use the helpes defined in `scripts/artifacts.ts`. As an example, here is the script for deploying the current contracts for latest release using `hardhat-deploy`
 
 ```ts
@@ -129,9 +121,9 @@ const deployCounter: DeployFunction = async function (
 
   const incrementOracleArtifact = await contract(
     "src/IncrementOracle.sol/IncrementOracle",
-  ).getArtifact("latest");
+  ).getArtifact("v1.3.1");
   const incrementOracleDeployment = await hre.deployments.deploy(
-    "IncrementOracle@latest",
+    "IncrementOracle@v1.3.1",
     {
       contract: {
         abi: incrementOracleArtifact.abi,
@@ -144,9 +136,9 @@ const deployCounter: DeployFunction = async function (
   );
 
   const counterArtifact = await contract("src/Counter.sol/Counter").getArtifact(
-    "latest",
+    "v1.3.1",
   );
-  await hre.deployments.deploy("Counter@latest", {
+  await hre.deployments.deploy("Counter@v1.3.1", {
     contract: {
       abi: counterArtifact.abi,
       bytecode: counterArtifact.evm.bytecode.object,
@@ -185,9 +177,9 @@ Note: Contract path has been formatted in order to replace `/` with `_` for fold
 ```json
 {
   "11155111": {
-    "latest": {
-      "Counter": "0xDDeDE203A7C96e1AfBaa7095Ea97458d874147D5",
-      "IncrementOracle": "0xde852AC5330ce2A7019F90378B00761B7ef7453f"
+    "v1.3.1": {
+      "Counter": "0x234d362c059E0AEFafE31b99B17667a98eA09f24",
+      "IncrementOracle": "0x2ECB45036aa981DAe9ED8051D46368fAeaA6f04c"
     }
   }
 }

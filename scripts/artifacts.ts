@@ -80,7 +80,7 @@ async function getArtifact(contractKey: string, release: string) {
     throw buildInfoResult.error;
   }
 
-  const contractPieces = contractKey.split("/");
+  const contractPieces = contractKey.split(":");
   const contractName = contractPieces.at(-1);
   if (!contractName) {
     throw new Error(
