@@ -4,14 +4,14 @@ import { build as tsupBuild } from "tsup";
 import path from "node:path";
 import { getReleaseBuildInfo } from "./artifacts";
 
-const RELEASES_FOLDER = path.join(__dirname, "../../releases");
-const ABIS_FOLDER = path.join(__dirname, "../../abis");
+const RELEASES_FOLDER = path.join(__dirname, "../releases");
+const ABIS_FOLDER = path.join(__dirname, "../abis");
 // Temporary `abis-tmp` folder for storing the files waiting to be bundled
-const ABIS_TMP_FOLDER = path.join(__dirname, "../../abis-tmp");
+const ABIS_TMP_FOLDER = path.join(__dirname, "../abis-tmp");
 const ABIS_TMP_FOLDER_FOR_BUNDLE = path.join(ABIS_TMP_FOLDER, "for-bundle");
 const ABIS_TMP_FOLDER_JSON = path.join(ABIS_TMP_FOLDER, "json");
 // Old `abis` folder in case the build fails
-const ABIS_OLD_FOLDER = path.join(__dirname, "../../abis-old");
+const ABIS_OLD_FOLDER = path.join(__dirname, "../abis-old");
 
 /**
  * Based on the releases and generated delta artifacts folders,
@@ -246,7 +246,7 @@ async function fillAbisTmpFolder() {
     for (const contractPath in buildInfoResult.value.output.contracts) {
       const contracts = buildInfoResult.value.output.contracts[contractPath];
       for (const contractName in contracts) {
-        const contractKey = `${contractPath.replace("/", "-")}:${contractName}`;
+        const contractKey = `${contractPath.replace("/", "_")}:${contractName}`;
 
         // Parsing is not perfect, so we take the raw parsed data using JSON.parse
         const contractAbi =
@@ -254,12 +254,20 @@ async function fillAbisTmpFolder() {
             .abi;
 
         await fs.writeFile(
-          path.join(ABIS_TMP_FOLDER_JSON, release, contractKey + ".json"),
+          path.join(
+            ABIS_TMP_FOLDER_JSON,
+            release,
+            fromPascalCaseToKebabCase(contractKey) + ".json",
+          ),
           JSON.stringify(contractAbi, null, 4),
         );
 
         await fs.writeFile(
-          path.join(ABIS_TMP_FOLDER_FOR_BUNDLE, release, contractKey + ".ts"),
+          path.join(
+            ABIS_TMP_FOLDER_FOR_BUNDLE,
+            release,
+            fromPascalCaseToKebabCase(contractKey) + ".ts",
+          ),
           `export const abi = ${JSON.stringify(
             contractAbi,
             null,
@@ -269,6 +277,21 @@ async function fillAbisTmpFolder() {
       }
     }
   }
+}
+
+function fromPascalCaseToKebabCase(pascalCase: string) {
+  let formatted = pascalCase
+    .replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, "$1-$2")
+    .toLowerCase();
+
+  formatted = formatted.replace(/_-/g, "_");
+  formatted = formatted.replace(/:-/g, ":");
+
+  if (formatted.startsWith("-")) {
+    return formatted.slice(1);
+  }
+
+  return formatted;
 }
 
 buildExposedAbis();

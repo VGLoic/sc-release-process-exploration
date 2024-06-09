@@ -122,21 +122,21 @@ export function toResult<T>(promise: Promise<T>): Promise<Result<T>> {
 type VerifyPayload = {
   // Address of the deployed contract
   address: string;
-  // Contract artifact with source name and contract name
-  artifact: ArtifactData & {
-    sourceName: string;
-    contractName: string;
-  };
-  // Build info of the associated contract artifact
-  buildInfo: BuildInfo;
+  // Source code of the contract - input part of the build info
+  sourceCode: BuildInfo["input"];
+  // Compiler version - solcLongVersion of the build info
+  compilerVersion: string;
+  // Source name of the contract - path of the contract file
+  sourceName: string;
+  // Contract name - name of the contract in the source file
+  contractName: string;
   // Libraries if any
   libraries?: {
     address: string;
-    artifact: ArtifactData & {
-      sourceName: string;
-      contractName: string;
-    };
+    sourceName: string;
+    contractName: string;
   }[];
+  encodedConstructorArgs?: string;
 };
 /**
  * Verify a contract on Etherscan
@@ -144,34 +144,34 @@ type VerifyPayload = {
  * @dev Need to be completed with constructor arguments
  * @param payload Verification payload
  * @param payload.address Address of the deployed contract
- * @param payload.artifact Contract artifact with source name and contract name
- * @param payload.buildInfo Build info of the associated contract artifact
+ * @param payload.sourceCode Source code of the contract - input part of the build info
+ * @param payload.compilerVersion Compiler version - solcLongVersion of the build info
+ * @param payload.sourceName Source name of the contract - path of the contract file
+ * @param payload.contractName Contract name - name of the contract in the source file
  * @param payload.libraries Libraries if any
+ * @param payload.encodedConstructorArgs Encoded constructor arguments
  */
 export async function verifyContract(payload: VerifyPayload) {
   const updatedSetting: BuildInfo["input"]["settings"] & {
     libraries: NonNullable<BuildInfo["input"]["settings"]["libraries"]>;
   } = {
-    ...payload.buildInfo.input.settings,
+    ...payload.sourceCode.settings,
     libraries: {},
   };
 
   if (payload.libraries) {
     for (const library of payload.libraries) {
-      updatedSetting.libraries[library.artifact.sourceName] = {
-        [library.artifact.contractName]: library.address,
+      updatedSetting.libraries[library.sourceName] = {
+        [library.contractName]: library.address,
       };
     }
   }
 
-  const updatedBuildInfo: BuildInfo = {
-    ...payload.buildInfo,
-    input: {
-      ...payload.buildInfo.input,
-      settings: updatedSetting,
-    },
+  const updatedSourceCode: BuildInfo["input"] = {
+    ...payload.sourceCode,
+    settings: updatedSetting,
   };
-  payload.buildInfo = updatedBuildInfo;
+  payload.sourceCode = updatedSourceCode;
 
   // ******************* End disabling *******************
   for (let i = 0; i < 5; i++) {
@@ -187,7 +187,7 @@ export async function verifyContract(payload: VerifyPayload) {
 
       if (message) {
         console.error(
-          `\n⚠️ Verification of ${payload.artifact.contractName} fails. \nIf fail happens because the data is not yet available on the block explorer, feel free to re-trigger the script in a few seconds in order to try to verify again.\n Actual error: `,
+          `\n⚠️ Verification of ${payload.sourceName}:${payload.contractName} fails. \nIf fail happens because the data is not yet available on the block explorer, feel free to re-trigger the script in a few seconds in order to try to verify again.\n Actual error: `,
           message,
         );
         return;
@@ -197,14 +197,14 @@ export async function verifyContract(payload: VerifyPayload) {
 }
 
 async function verifyContractOnce(payload: VerifyPayload) {
-  const apiKey = process.env.POLYGON_SCAN_API_KEY;
+  const apiKey = process.env.ETHERSCAN_API_KEY;
   if (!apiKey) {
     throw new Error("Missing API key for verification");
   }
   const etherscan = new Etherscan(
     apiKey,
-    "https://api-testnet.polygonscan.com/api",
-    "https://mumbai.polygonscan.com/",
+    "https://api-sepolia.etherscan.io/api",
+    "https://sepolia.etherscan.io/",
   );
 
   const isVerified = await etherscan.isVerified(payload.address);
@@ -219,13 +219,13 @@ async function verifyContractOnce(payload: VerifyPayload) {
       // Contract address
       payload.address,
       // Inputs
-      JSON.stringify(payload.buildInfo.input),
+      JSON.stringify(payload.sourceCode),
       // Contract full name
-      `${payload.artifact.sourceName}:${payload.artifact.contractName}`,
+      `${payload.sourceName}:${payload.contractName}`,
       // Compiler version
-      `v${payload.buildInfo.solcLongVersion}`,
+      `v${payload.compilerVersion}`,
       // Encoded constructor arguments
-      "",
+      payload.encodedConstructorArgs ?? "",
     );
 
     await sleep(2_000);
@@ -234,7 +234,7 @@ async function verifyContractOnce(payload: VerifyPayload) {
 
     if (verificationStatus.isSuccess()) {
       console.log(
-        `Successfully verified contract ${payload.artifact.contractName}`,
+        `Successfully verified contract ${payload.sourceName}:${payload.contractName}`,
       );
     } else {
       throw new Error(verificationStatus.message);
@@ -254,17 +254,81 @@ export function toAsyncResult<T, TError = Error>(
     .catch((error) => ({ ok: false as const, error }));
 }
 
+const literalSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+type Literal = z.infer<typeof literalSchema>;
+type Json = Literal | { [key: string]: Json } | Json[];
+const ZJson: z.ZodType<Json> = z.lazy(() =>
+  z.union([literalSchema, z.array(ZJson), z.record(ZJson)]),
+);
+
 export const ZContractInfo = z.object({
-  abi: z.array(z.object({ name: z.string() })),
+  abi: z.array(
+    z.object({
+      inputs: z.array(ZJson),
+      name: z.string(),
+      outputs: z.array(ZJson),
+      stateMutability: z.string(),
+      type: z.string(),
+    }),
+  ),
+  devdoc: ZJson,
   evm: z.object({
     bytecode: z.object({
+      functionDebugData: ZJson,
+      generatedSources: z.array(ZJson),
+      linkReferences: ZJson,
       object: z.string(),
+      opcodes: z.string(),
+      sourceMap: z.string(),
     }),
-    deployedBytecode: z.object({}),
+    deployedBytecode: z.object({
+      functionDebugData: ZJson,
+      generatedSources: z.array(ZJson),
+      linkReferences: ZJson,
+      object: z.string(),
+      opcodes: z.string(),
+      sourceMap: z.string(),
+    }),
+    gasEstimates: ZJson,
+    methodIdentifiers: ZJson,
   }),
   metadata: z.string(),
+  storageLayout: ZJson,
+  userdoc: ZJson,
 });
 export const ZBuildInfo = z.object({
+  id: z.string(),
+  _format: z.string(),
+  solcVersion: z.string(),
+  solcLongVersion: z.string(),
+  input: z.object({
+    language: z.string(),
+    sources: z.record(z.string(), z.object({ content: z.string() })),
+    settings: z.object({
+      viaIR: z.boolean().optional(),
+      optimizer: z.object({
+        runs: z.number().optional(),
+        enabled: z.boolean().optional(),
+        details: z
+          .object({
+            yulDetails: z.object({
+              optimizerSteps: z.string(),
+            }),
+          })
+          .optional(),
+      }),
+      metadata: z.object({ useLiteralContent: z.boolean() }).optional(),
+      outputSelection: z.record(
+        z.string(),
+        z.record(z.string(), z.array(z.string())),
+      ),
+      evmVersion: z.string().optional(),
+      libraries: z
+        .record(z.string(), z.record(z.string(), z.string()))
+        .optional(),
+      remappings: z.array(z.string()).optional(),
+    }),
+  }),
   output: z.object({
     contracts: z.record(z.string(), z.record(z.string(), ZContractInfo)),
   }),

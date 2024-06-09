@@ -106,16 +106,17 @@ As we can't rely on the usual integration of Hardhat or `hardhat-deploy`, helper
 The helper scripts are based on a "releases summary" that needs to be generated beforehand, i.e.
 
 ```console
-# Generate ignored `releases/generated/summary.ts` file
+# Generate ignored `releases/generated/summary.ts` file for TypeScript support
 yarn generate-releases-summary
 ```
 
 REMIND ME TODO:
 
-1. fix type `BuildInfo`,
+1. fix type `BuildInfo`, -> DONE
 2. write about deployment in README,
-3. cleanup?
-4. handle same contract within release?
+3. handle verification -> DONE,
+4. cleanup?
+5. handle same contract within release?
 
 Once the summary, one can use the helpes defined in `scripts/artifacts.ts`. As an example, here is the script for deploying the current contracts for latest release using `hardhat-deploy`
 
@@ -161,11 +162,41 @@ const deployCounter: DeployFunction = async function (
 };
 ```
 
+### Content of the NPM package
+
+The NPM package will expose two things
+
+1. A folder `abis` containg all the ABIs organized by release. Each ABI is available as a `JSON` file and as a `TypeScript const`,
+
+```
+* abis/
+ * ├── <release-name>/
+ * │   ├── <contract-path>:<contract-name>.json
+ * │   ├── <contract-path>:<contract-name>.js
+ * │   ├── <contract-path>:<contract-name>.d.ts
+ * │   └── ...
+ * └── ...
+
+Note: Contract path has been formatted in order to replace `/` with `_` for folder org reasons. Names have been formatted as kebab case.
+```
+
+2. a file `deployment-summary.json` which organizes the deployments by networks and release, e.g.
+
+```json
+{
+  "11155111": {
+    "latest": {
+      "Counter": "0xDDeDE203A7C96e1AfBaa7095Ea97458d874147D5",
+      "IncrementOracle": "0xde852AC5330ce2A7019F90378B00761B7ef7453f"
+    }
+  }
+}
+```
+
 ## Version/Release manager
 
 [Changesets](https://github.com/changesets/changesets) is used in order to manage versions here but any other tools can be freely chosen.
 
 ## What needs to be done
 
-- Storing artifacts outside of the repository,
-- Exploration for NPM package.
+- Storing artifacts outside of the repository.

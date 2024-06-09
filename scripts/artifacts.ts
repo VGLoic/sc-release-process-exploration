@@ -2,7 +2,6 @@ import fs from "fs/promises";
 
 import * as releasesSummary from "../releases/generated/summary";
 import { ZBuildInfo, toAsyncResult } from "./utils";
-import { BuildInfo } from "hardhat/types";
 
 export type Contract = keyof typeof releasesSummary.CONTRACTS;
 export type Release = keyof typeof releasesSummary.RELEASES;
@@ -120,18 +119,15 @@ export async function getReleaseBuildInfo(release: string) {
       .then(JSON.parse),
   );
   if (!buildInfoContentResult.ok) {
-    throw new Error(
-      `Error reading build-info.json for release ${release}. Skipping`,
-    );
+    console.error(buildInfoContentResult.error);
+    throw buildInfoContentResult.error;
   }
   const buildInfoResult = ZBuildInfo.passthrough().safeParse(
     buildInfoContentResult.value,
   );
   if (!buildInfoResult.success) {
-    throw new Error(
-      `Error parsing build-info.json for release ${release}. Skipping`,
-    );
+    console.error(buildInfoResult.error);
+    throw buildInfoResult.error;
   }
-  // Parsing is not perfect, so we take the raw parsed data using JSON.parse
-  return buildInfoContentResult.value as BuildInfo;
+  return buildInfoResult.data;
 }
