@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 
-import * as releasesSummary from "../../releases/generated/summary";
-import { BuildInfo, toAsyncResult } from "./utils";
+import * as releasesSummary from "../releases/generated/summary";
+import { ZBuildInfo, toAsyncResult } from "./utils";
 
 export type Contract = keyof typeof releasesSummary.CONTRACTS;
 export type Release = keyof typeof releasesSummary.RELEASES;
@@ -75,24 +75,12 @@ export function release<TRelease extends Release>(releaseKey: TRelease) {
 }
 
 async function getArtifact(contractKey: string, release: string) {
-  const buildInfoContentResult = await toAsyncResult(
-    fs
-      .readFile(`releases/${release}/build-info.json`, "utf-8")
-      .then(JSON.parse),
-  );
-  if (!buildInfoContentResult.ok) {
-    throw new Error(
-      `Error reading build-info.json for release ${release}. Skipping`,
-    );
-  }
-  const buildInfoResult = BuildInfo.safeParse(buildInfoContentResult.value);
-  if (!buildInfoResult.success) {
-    throw new Error(
-      `Error parsing build-info.json for release ${release}. Skipping`,
-    );
+  const buildInfoResult = await toAsyncResult(getReleaseBuildInfo(release));
+  if (!buildInfoResult.ok) {
+    throw buildInfoResult.error;
   }
 
-  const contractPieces = contractKey.split("/");
+  const contractPieces = contractKey.split(":");
   const contractName = contractPieces.at(-1);
   if (!contractName) {
     throw new Error(
@@ -107,11 +95,39 @@ async function getArtifact(contractKey: string, release: string) {
   }
   // Parsing is not perfect, so we take the raw parsed data using JSON.parse
   const contractArtifact =
-    buildInfoContentResult.value.output.contracts[contractPath][contractName];
+    buildInfoResult.value.output.contracts[contractPath][contractName];
   if (!contractArtifact) {
     throw new Error(
       `Contract artifact not found for contract key: ${contractKey} with release ${release}`,
     );
   }
   return contractArtifact;
+}
+
+export async function getReleaseBuildInfo(release: string) {
+  const buildInfoExists = await fs
+    .stat(`releases/${release}/build-info.json`)
+    .catch(() => false);
+  if (!buildInfoExists) {
+    throw new Error(
+      `build-info.json not found for release ${release}. Skipping`,
+    );
+  }
+  const buildInfoContentResult = await toAsyncResult(
+    fs
+      .readFile(`releases/${release}/build-info.json`, "utf-8")
+      .then(JSON.parse),
+  );
+  if (!buildInfoContentResult.ok) {
+    console.error(buildInfoContentResult.error);
+    throw buildInfoContentResult.error;
+  }
+  const buildInfoResult = ZBuildInfo.passthrough().safeParse(
+    buildInfoContentResult.value,
+  );
+  if (!buildInfoResult.success) {
+    console.error(buildInfoResult.error);
+    throw buildInfoResult.error;
+  }
+  return buildInfoResult.data;
 }

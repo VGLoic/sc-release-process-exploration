@@ -106,11 +106,11 @@ As we can't rely on the usual integration of Hardhat or `hardhat-deploy`, helper
 The helper scripts are based on a "releases summary" that needs to be generated beforehand, i.e.
 
 ```console
-# Generate ignored `releases/generated/summary.ts` file
+# Generate ignored `releases/generated/summary.ts` file for TypeScript support
 yarn generate-releases-summary
 ```
 
-Once the summary, one can use the helpes defined in `scripts/v2/artifacts.ts`. As an example, here is the script for deploying the current contracts for latest release using `hardhat-deploy`
+Once the summary, one can use the helpes defined in `scripts/artifacts.ts`. As an example, here is the script for deploying the current contracts for latest release using `hardhat-deploy`
 
 ```ts
 // deploy/00-deploy-counter.ts
@@ -121,9 +121,9 @@ const deployCounter: DeployFunction = async function (
 
   const incrementOracleArtifact = await contract(
     "src/IncrementOracle.sol/IncrementOracle",
-  ).getArtifact("latest");
+  ).getArtifact("v1.3.1");
   const incrementOracleDeployment = await hre.deployments.deploy(
-    "IncrementOracle@latest",
+    "IncrementOracle@v1.3.1",
     {
       contract: {
         abi: incrementOracleArtifact.abi,
@@ -136,9 +136,9 @@ const deployCounter: DeployFunction = async function (
   );
 
   const counterArtifact = await contract("src/Counter.sol/Counter").getArtifact(
-    "latest",
+    "v1.3.1",
   );
-  await hre.deployments.deploy("Counter@latest", {
+  await hre.deployments.deploy("Counter@v1.3.1", {
     contract: {
       abi: counterArtifact.abi,
       bytecode: counterArtifact.evm.bytecode.object,
@@ -154,11 +154,41 @@ const deployCounter: DeployFunction = async function (
 };
 ```
 
+### Content of the NPM package
+
+The NPM package will expose two things
+
+1. A folder `abis` containg all the ABIs organized by release. Each ABI is available as a `JSON` file and as a `TypeScript const`,
+
+```
+* abis/
+ * ├── <release-name>/
+ * │   ├── <contract-path>:<contract-name>.json
+ * │   ├── <contract-path>:<contract-name>.js
+ * │   ├── <contract-path>:<contract-name>.d.ts
+ * │   └── ...
+ * └── ...
+
+Note: Contract path has been formatted in order to replace `/` with `_` for folder org reasons. Names have been formatted as kebab case.
+```
+
+2. a file `deployment-summary.json` which organizes the deployments by networks and release, e.g.
+
+```json
+{
+  "11155111": {
+    "v1.3.1": {
+      "Counter": "0x234d362c059E0AEFafE31b99B17667a98eA09f24",
+      "IncrementOracle": "0x2ECB45036aa981DAe9ED8051D46368fAeaA6f04c"
+    }
+  }
+}
+```
+
 ## Version/Release manager
 
 [Changesets](https://github.com/changesets/changesets) is used in order to manage versions here but any other tools can be freely chosen.
 
 ## What needs to be done
 
-- Storing artifacts outside of the repository,
-- Exploration for NPM package.
+- Storing artifacts outside of the repository.

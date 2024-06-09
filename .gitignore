@@ -19,3 +19,4 @@ generated-delta
 # Releases files
 releases/generated
 deployments/localhost
+deployments-summary.json

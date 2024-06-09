@@ -1,5 +1,5 @@
 import fs from "fs/promises";
-import { BuildInfo, toAsyncResult } from "./utils";
+import { ZBuildInfo, toAsyncResult } from "./utils";
 /**
  * Based from the `releases` folder content, generate a `releases-summary.ts` file in `scripts/v2` folder.
  * This file contains two constants:
@@ -44,7 +44,8 @@ async function generateReleasesSummary() {
   }
   const releasesDirectories = releasesEntriesResult.value
     .filter((dirent) => dirent.isDirectory())
-    .map((dirent) => dirent.name);
+    .map((dirent) => dirent.name)
+    .filter((name) => name !== "generated");
 
   const releasesPerContracts: Record<string, string[]> = {};
   const contractsPerReleases: Record<string, string[]> = {};
@@ -71,7 +72,7 @@ async function generateReleasesSummary() {
       );
       continue;
     }
-    const buildInfoResult = BuildInfo.safeParse(buildInfoContentResult.value);
+    const buildInfoResult = ZBuildInfo.safeParse(buildInfoContentResult.value);
     if (!buildInfoResult.success) {
       console.warn(
         `Error parsing build-info.json for release ${release}. Skipping`,
@@ -81,7 +82,7 @@ async function generateReleasesSummary() {
     for (const contractPath in buildInfoResult.data.output.contracts) {
       const contracts = buildInfoResult.data.output.contracts[contractPath];
       for (const contractName in contracts) {
-        const contractKey = `${contractPath}/${contractName}`;
+        const contractKey = `${contractPath}:${contractName}`;
         contractsPerReleases[release].push(contractKey);
         if (!releasesPerContracts[contractKey]) {
           releasesPerContracts[contractKey] = [];
@@ -109,15 +110,15 @@ async function generateReleasesSummary() {
   }
   releasesSummary += `} as const;\n`;
 
+  await fs.mkdir("releases/generated", { recursive: true }).catch(() => {});
+
   // Write the `releases-summary.ts` file
   const writeResult = await toAsyncResult(
-    fs.writeFile("scripts/v2/releases-summary.ts", releasesSummary),
+    fs.writeFile("releases/generated/summary.ts", releasesSummary),
   );
   if (!writeResult.ok) {
     process.exitCode = 1;
-    console.error(
-      `Error writing the releases-summary.ts file: ${writeResult.error}`,
-    );
+    console.error(`Error writing the summary.ts file: ${writeResult.error}`);
     return;
   }
 }
