@@ -10,7 +10,7 @@
     "format:contracts": "prettier --write --plugin=prettier-plugin-solidity 'src/**/*.sol'",
     "format": "prettier --write --plugin=prettier-plugin-solidity 'src/**/*.sol' 'scripts/**/*.ts'",
     "compile": "yarn format:contracts && hardhat compile --force --no-typechain",
-    "release": "yarn release:build-exposed-abis && yarn release:build-deployments-summary && yarn changeset publish",
+    "release": "generate-releases-summary && yarn release:build-exposed-abis && yarn release:build-deployments-summary && yarn changeset publish",
     "diff-with-latest": "ts-node --files scripts/diff-with-latest.ts",
     "scripts:compile": "tsup scripts/diff-with-latest.ts",
     "generate-releases-summary": "ts-node --files scripts/generate-releases-summary.ts",
