@@ -185,6 +185,15 @@ Note: Contract path has been formatted in order to replace `/` with `_` for fold
 }
 ```
 
+The NPM package can then be installed and used in order to access the deployments and the ABIs:
+
+```ts
+import deployments from "sc-release-process-exploration/deployments-summary.json"
+import { abi } from "sc-release-process-exploration/abis/v1.3.1/src_counter.sol_counter"
+
+...
+```
+
 ## Version/Release manager
 
 [Changesets](https://github.com/changesets/changesets) is used in order to manage versions here but any other tools can be freely chosen.
