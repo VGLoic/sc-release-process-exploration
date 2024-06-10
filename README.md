@@ -4,6 +4,9 @@ This repository explores the possibilities for release process for smart contrac
 
 A first iteration is explained in this [document](README-v1.md).
 
+> [!NOTE]
+> The process described here tries to answer in the most objective way to some problematics. However, it is ultimately opinionated and may not fit your target process. Opinions, feedbacks and improvements are obviously welcomed.
+
 ## Motivation
 
 There are two main problems we are trying to address here.
@@ -183,6 +186,15 @@ Note: Contract path has been formatted in order to replace `/` with `_` for fold
     }
   }
 }
+```
+
+The NPM package can then be installed and used in order to access the deployments and the ABIs:
+
+```ts
+import deployments from "sc-release-process-exploration/deployments-summary.json"
+import { abi } from "sc-release-process-exploration/abis/v1.3.1/src_counter.sol_counter"
+
+...
 ```
 
 ## Version/Release manager
