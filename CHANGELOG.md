@@ -1,5 +1,11 @@
 # sc-release-process-exploration
 
+## 1.3.3
+
+### Patch Changes
+
+- 2414c88: Fix release workflow
+
 ## 1.3.2
 
 ### Patch Changes
