@@ -4,6 +4,9 @@ This repository explores the possibilities for release process for smart contrac
 
 A first iteration is explained in this [document](README-v1.md).
 
+> [!NOTE]
+> The process described here tries to answer in the most objective way to some problematics. However, it is ultimately opinionated and may not fit your target process. Opinions, feedbacks and improvements are obviously welcomed.
+
 ## Motivation
 
 There are two main problems we are trying to address here.
