@@ -24,22 +24,16 @@ jobs:
         run: yarn
       - name: Create artifacts
         run: yarn compile
-      - name: Checkout main
-        uses: actions/checkout@v4
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          ref: main
-          clean: false
-      - name: Commit release artifacts on main
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-3
+      - name: Upload release artifacts
         env:
           RELEASE_TAG: ${{ github.ref_name }}
+          BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
         run: |
           build_info_filename=$(ls -AU artifacts/build-info | head -1)
-          mkdir -p releases/$RELEASE_TAG
-          cp -r artifacts/build-info/$build_info_filename releases/$RELEASE_TAG/build-info.json
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if [[ `git status --porcelain` ]]; then
-            git add .
-            git commit -m "update release artifacts for $RELEASE_TAG"
-            git push
-          fi
+          aws s3 cp artifacts/build-info/$build_info_filename s3://$BUCKET_NAME/releases/$RELEASE_TAG/build-info.json
