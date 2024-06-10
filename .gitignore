@@ -17,6 +17,6 @@ abis
 generated-delta
 
 # Releases files
-releases/generated
+releases
 deployments/localhost
 deployments-summary.json
