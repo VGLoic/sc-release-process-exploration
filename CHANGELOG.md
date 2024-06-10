@@ -1,5 +1,11 @@
 # sc-release-process-exploration
 
+## 1.3.2
+
+### Patch Changes
+
+- 8cb54e4: Deploy ABIs and deployments recap
+
 ## 1.3.1
 
 ### Patch Changes
