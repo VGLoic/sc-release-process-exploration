@@ -7,7 +7,7 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   simulate-release:
-    name: "Simulate Release"
+    name: Simulate release
     runs-on: ubuntu-latest
     permissions:
       contents: read
