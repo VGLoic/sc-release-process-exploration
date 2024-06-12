@@ -1,5 +1,11 @@
 # sc-release-process-exploration
 
+## 1.4.1
+
+### Patch Changes
+
+- 7f2db04: Support no deployments
+
 ## 1.4.0
 
 ### Minor Changes
