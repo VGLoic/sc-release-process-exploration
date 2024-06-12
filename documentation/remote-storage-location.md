@@ -1,14 +1,22 @@
 # The repository keeps everything
 
-In this version, **we commit the release files and the deployments directly in the repository**.
+In this version, **the release files are stored on a remote storage location**, the deployments are still kept locally in this repository.
 
-We store the releases artifacts in the `releases` folder which is committed on the `main` branch. Different GitHub workflows will help us having this folder up to date:
+The remote storage location is an [AWS S3 Bucket](https://aws.amazon.com/pm/serv-s3).
 
-- on `push` on `main`: the `latest` release is created or updated,
-- on `push` on `tags`: the `<tag>` release is created,
-- on `pull request`: nothing is updated but we generate a diff with the current state of the `latest` release.
+When needed, the developer will download the releases artifacts in order to perform some operations, e.g. a deployment. The differences with the [path #1](../documentation/repository-keeps-everything.md) are:
 
-Deployments will be stored in the `deployments` folder which is commited on the `main` branch too. Scripts are written in the repository in order to deploy contracts based on the artifacts contained in the `releases` folder.
+- the `releases` folder is not committed, hence there is no issues about repository size or big pull requests,
+- only those who need to perform operations with the releases artifacts need to download them,
+- the remote storage location allows for an API access by other services if needed.
+
+We will find the same GitHub workdlows than before, but slightly modified:
+
+- on `push` on `main`: the `latest` release is created locally and then copied to the remote storage,
+- on `push` on `tags`: the `<tag>` release is created locally and then copied to the remote storage,
+- on `pull request`: nothing is updated but we download the `latest` release and we generate a diff with the current state of the `latest` release.
+
+Deployments will be stored in the `deployments` folder which is commited on the `main` branch. Scripts are written in the repository in order to deploy contracts based on the artifacts contained in the `releases` folder.
 
 A NPM package is created in order to share the ABIs and the deployments.
 
@@ -35,20 +43,25 @@ jobs:
         run: yarn
       - name: Create artifacts
         run: yarn compile
-      - name: Commit release artifacts
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-3
+      - name: Upload release artifacts
         env:
           RELEASE_TAG: latest
+          BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
         run: |
           build_info_filename=$(ls -AU artifacts/build-info | head -1)
-          mkdir -p releases/$RELEASE_TAG
-          cp -r artifacts/build-info/$build_info_filename releases/$RELEASE_TAG/build-info.json
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if [[ `git status --porcelain` ]]; then
-            git add .
-            git commit -m "update latest release artifacts"
-            git push
-          fi
+          aws s3 cp artifacts/build-info/$build_info_filename s3://$BUCKET_NAME/releases/$RELEASE_TAG/build-info.json
+      - name: Download latest release artifacts
+        env:
+          BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+        run: |
+          mkdir -p releases/
+          aws s3 cp s3://$BUCKET_NAME/releases/ releases/ --recursive || echo "Error: Failed to download releases from S3."
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
@@ -67,10 +80,16 @@ When dealing with a list of releases, deployments must take into account which r
 
 As we can't rely on the usual integration of Hardhat or `hardhat-deploy`, helper scripts have been made in order to retrieve a contract artifact for a given name and a given release. Once the artifact retrieved, one should deploy using directly the artifact, so using the `bytecode`, `abi`, etc... Even if this means a bit more work, the advantage is that we are now working with fixed artifacts that can no longer be modified.
 
+As the releases artifacts are stored remotely, one would need to download them locally before trying to deploy. With the option of AWS S3, it would look like
+
+```console
+aws s3 cp s3://<MY BUCKET NAME>/releases/ releases/ --recursive
+```
+
 The helper scripts are based on a "releases summary" that needs to be generated beforehand, i.e.
 
 ```console
-# Generate ignored `releases/generated/summary.ts` file for TypeScript support
+# Generate `releases/generated/summary.ts` file for TypeScript support
 yarn generate-releases-summary
 ```
 
