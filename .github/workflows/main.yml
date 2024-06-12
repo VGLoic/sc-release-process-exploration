@@ -9,7 +9,7 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   release:
-    name: Upload latest release and release NPM package
+    name: Upload latest release artifacts and release NPM package
     runs-on: ubuntu-latest
     permissions:
       contents: write
