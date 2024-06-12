@@ -2,10 +2,10 @@
 
 This repository explores the possibilities for release process for smart contracts.
 
-A first iteration is explained in this [document](README-v1.md).
+A first (outdated) iteration is explained in this [document](README-v1.md).
 
 > [!NOTE]
-> The process described here tries to answer in the most objective way to some problematics. However, it is ultimately opinionated and may not fit your target process. Opinions, feedbacks and improvements are obviously welcomed.
+> The process described here tries to answer in the most objective way to some problematics. However, it stays ultimately opinionated and may not be a fit for some processes. Opinions, feedbacks and improvements are welcomed.
 
 ## Motivation
 
@@ -59,12 +59,30 @@ Deployments will be stored in the `deployments` folder which is commited on the 
 
 A NPM package is created in order to share the ABIs and the deployments.
 
-Additional details can be found in the [related documentation](documentation/repository-keeps-everything);
+Additional details can be found in the [related documentation](documentation/repository-keeps-everything.md).
+
+### Path #2: the artifacts are stored remotely (AWS S3 bucket)
+
+In this version, **the release files are stored on a remote storage location**, the deployments are still kept locally in this repository.
+
+The remote storage location is an [AWS S3 Bucket](https://aws.amazon.com/pm/serv-s3).
+
+When needed, the developer will download the releases artifacts in order to perform some operations, e.g. a deployment. The differences with the path #1 are:
+
+- the `releases` folder is not committed, hence there is no issues about repository size or big pull requests,
+- only those who need to perform operations with the releases artifacts need to download them,
+- the remote storage location allows for an API access by other services if needed.
+
+We will find the same GitHub workdlows than before, but slightly modified:
+
+- on `push` on `main`: the `latest` release is created locally and then copied to the remote storage,
+- on `push` on `tags`: the `<tag>` release is created locally and then copied to the remote storage,
+- on `pull request`: nothing is updated but we download the `latest` release and we generate a diff with the current state of the `latest` release.
+
+The deployments and NPM package works exactly in the same way than in the path #1. Except that one has to download the releases artifacts in order to perform a deployment.
+
+Additional details can be found in the [related documentation](documentation/remote-storage-location.md).
 
 ## Version/Release manager
 
 [Changesets](https://github.com/changesets/changesets) is used in order to manage versions here but any other tools can be freely chosen.
-
-## What needs to be done
-
-- Storing artifacts outside of the repository.
