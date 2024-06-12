@@ -19,7 +19,7 @@ The `main.yml` workflow file contains the heart of the artifacts release process
 ```yaml
 jobs:
   release:
-    name: Release latest
+    name: Upload latest release artifacts and release NPM package
     runs-on: ubuntu-latest
     permissions:
       contents: write

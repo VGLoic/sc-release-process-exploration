@@ -29,8 +29,8 @@ import { z } from "zod";
 async function buildDeploymentsSummary() {
   const hasDeployments = await fs.stat("deployments").catch(() => false);
   if (!hasDeployments) {
-    process.exitCode = 1;
-    console.error("No deployments found. Skipping");
+    console.warn("No deployments found");
+    await fs.writeFile("deployments-summary.json", JSON.stringify({}, null, 2));
     return;
   }
 

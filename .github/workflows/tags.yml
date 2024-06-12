@@ -8,8 +8,8 @@ on:
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
-  release:
-    name: Copy release artifacts on main
+  upload-release-artifacts:
+    name: Upload release artifacts
     runs-on: ubuntu-latest
     permissions:
       contents: write
