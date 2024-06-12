@@ -38,6 +38,12 @@ jobs:
         run: |
           build_info_filename=$(ls -AU artifacts/build-info | head -1)
           aws s3 cp artifacts/build-info/$build_info_filename s3://$BUCKET_NAME/releases/$RELEASE_TAG/build-info.json
+      - name: Download latest release artifacts
+        env:
+          BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+        run: |
+          mkdir -p releases/
+          aws s3 cp s3://$BUCKET_NAME/releases/ releases/ --recursive || echo "Error: Failed to download releases from S3."
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1

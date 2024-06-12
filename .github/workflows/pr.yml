@@ -36,7 +36,7 @@ jobs:
           BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
         run: |
           mkdir -p releases/latest
-          aws s3 cp s3://$BUCKET_NAME/releases/latest/build-info.json releases/latest/build-info.json || echo "Error: Failed to copy build-info from latest release from S3."
+          aws s3 cp s3://$BUCKET_NAME/releases/latest/build-info.json releases/latest/build-info.json || echo "Error: Failed to download latest release from S3."
       - name: Create diff between artifacts and latest release
         uses: actions/github-script@v7
         id: artifacts-diff
