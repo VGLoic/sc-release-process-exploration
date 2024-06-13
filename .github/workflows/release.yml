@@ -1,9 +1,8 @@
-name: Releases workflow
+name: Release workflow
 
 on:
-  push:
-    tags:
-      - "**"
+  release:
+    types: [published]
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
