@@ -1,5 +1,11 @@
 # sc-release-process-exploration
 
+## 1.4.2
+
+### Patch Changes
+
+- 6b5de2e: Add release workflow
+
 ## 1.4.1
 
 ### Patch Changes
