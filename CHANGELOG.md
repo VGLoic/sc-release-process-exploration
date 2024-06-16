@@ -1,5 +1,11 @@
 # sc-release-process-exploration
 
+## 1.4.6
+
+### Patch Changes
+
+- bd3f246: rework order in release process
+
 ## 1.4.5
 
 ### Patch Changes
