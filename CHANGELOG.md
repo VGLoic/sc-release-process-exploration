@@ -1,5 +1,11 @@
 # sc-release-process-exploration
 
+## 1.4.5
+
+### Patch Changes
+
+- d709e0b: fix release name
+
 ## 1.4.4
 
 ### Patch Changes
