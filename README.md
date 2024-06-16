@@ -55,7 +55,9 @@ We store the releases artifacts in the `releases` folder which is committed on t
 - on `push` on `tags`: the `<tag>` release is created,
 - on `pull request`: nothing is updated but we generate a diff with the current state of the `latest` release.
 
-> !NOTE! We are using [Changesets](https://github.com/changesets/changesets) in order to manage release of the NPM package. Because of this, we don't rely on the `push on tags` workflow as this part is automated by Changesets. Instead, the `main` workflow is completed in order to upload the release artifacts before the actual release of the NPM package is published.
+> !NOTE! We are using [Changesets](https://github.com/changesets/changesets) in order to manage release of the NPM package.
+> Because of this, we don't rely on the `push on tags` workflow as this part is automated by Changesets.
+> Instead, the `main` workflow executes a particular `release` script that contains the logic to take into account the new release and the build for the NPM package.
 
 Deployments will be stored in the `deployments` folder which is commited on the `main` branch too. Scripts are written in the repository in order to deploy contracts based on the artifacts contained in the `releases` folder.
 
@@ -80,6 +82,10 @@ We will find the same GitHub workdlows than before, but slightly modified:
 - on `push` on `main`: the `latest` release is created locally and then copied to the remote storage,
 - on `push` on `tags`: the `<tag>` release is created locally and then copied to the remote storage,
 - on `pull request`: nothing is updated but we download the `latest` release and we generate a diff with the current state of the `latest` release.
+
+> !NOTE! We are using [Changesets](https://github.com/changesets/changesets) in order to manage release of the NPM package.
+> Because of this, we don't rely on the `push on tags` workflow as this part is automated by Changesets.
+> Instead, the `main` workflow executes a particular `release` script that contains the logic upload the new release, download the existing releases and the build for the NPM package.
 
 > !NOTE! We are using [Changesets](https://github.com/changesets/changesets) in order to manage release of the NPM package. Because of this, we don't rely on the `push on tags` workflow as this part is automated by Changesets. Instead, the `main` workflow is completed in order to upload the release artifacts before the actual release of the NPM package is published.
 

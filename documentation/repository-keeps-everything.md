@@ -53,13 +53,24 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
+          # Script to run logic logic before actually publishing
+          # This is needed as Changesets won't trigger the tags workflow when a new version is published, so we need to do it manually
+          # The steps of the script are:
+          # 1. Commit and push the new release,
+          # 2. Build the artifacts for the NPM package,
+          # 3. Publish the NPM package
           publish: yarn release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 ```
 
+> !WARNING! The custom `release` script has actually not been tested.
+
 The `tags.yaml` worfklow will handle all the other releases and will be quite similar in terms of jobs.
+
+> !NOTE! The `tags.yaml` workflow is actually not used when working with Changesets.
+> However, it would still be the recommended way of doing things if one was not interested in the automated part of NPM package with Changeset.
 
 ## Deployments
 
