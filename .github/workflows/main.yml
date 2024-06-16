@@ -44,5 +44,6 @@ jobs:
         with:
           publish: yarn release
         env:
+          BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
