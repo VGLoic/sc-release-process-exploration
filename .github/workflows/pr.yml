@@ -6,6 +6,16 @@ on:
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
+  test-json:
+    name: Test JSON
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create JSON file and set it as output
+        id: create-json
+        run: echo "MY_JSON=[{\"name\":\"Jack\"}]" >> $GITHUB_OUTPUT
+      - name: Test JSON file
+        run: echo "${{ steps.create-json.outputs.GITHUB_OUTPUT[0] }}"
+
   simulate-release:
     name: Simulate release
     runs-on: ubuntu-latest
