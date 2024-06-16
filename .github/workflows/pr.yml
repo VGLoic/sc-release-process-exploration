@@ -14,11 +14,11 @@ jobs:
         id: create-json
         run: echo "MY_JSON=[{\"name\":\"Jack\"}]" >> $GITHUB_OUTPUT
       - name: Test JSON file
-        run: echo "${{ steps.create-json.outputs.GITHUB_OUTPUT }}"
+        run: echo "${{ steps.create-json.outputs.MY_JSON }}"
       - name: Test JSON file
-        run: echo "${{ steps.create-json.outputs.GITHUB_OUTPUT[0] }}"
+        run: echo "${{ steps.create-json.outputs.MY_JSON[0] }}"
       - name: Test JSON file
-        run: echo "${{ steps.create-json.outputs.GITHUB_OUTPUT[0].name }}"
+        run: echo "${{ steps.create-json.outputs.MY_JSON[0].name }}"
 
   simulate-release:
     name: Simulate release
