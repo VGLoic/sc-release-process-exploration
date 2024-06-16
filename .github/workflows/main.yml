@@ -52,3 +52,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Upload release artifacts
+        if: steps.changesets.outputs.published == 'true'
+        env:
+          BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+        run: |
+          RELEASE_TAG=v${{ steps.changesets.outputs.publishedPackages[0].version }}
+          build_info_filename=$(ls -AU artifacts/build-info | head -1)
+          aws s3 cp artifacts/build-info/$build_info_filename s3://$BUCKET_NAME/releases/$RELEASE_TAG/build-info.json
