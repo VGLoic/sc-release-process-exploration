@@ -1,5 +1,11 @@
 # sc-release-process-exploration
 
+## 1.4.3
+
+### Patch Changes
+
+- e168db9: Remove release workflow, update main workflow
+
 ## 1.4.2
 
 ### Patch Changes
