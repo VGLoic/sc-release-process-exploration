@@ -31,19 +31,13 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-3
-      - name: Upload release artifacts
+      - name: Upload latest release artifacts
         env:
           RELEASE_TAG: latest
           BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
         run: |
           build_info_filename=$(ls -AU artifacts/build-info | head -1)
           aws s3 cp artifacts/build-info/$build_info_filename s3://$BUCKET_NAME/releases/$RELEASE_TAG/build-info.json
-      - name: Download latest release artifacts
-        env:
-          BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
-        run: |
-          mkdir -p releases/
-          aws s3 cp s3://$BUCKET_NAME/releases/ releases/ --recursive || echo "Error: Failed to download releases from S3."
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
@@ -52,11 +46,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Upload release artifacts
-        if: steps.changesets.outputs.published == 'true'
-        env:
-          BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
-          RELEASE_TAG_WITHOUT_PREFIX: ${{ fromJSON(steps.changesets.outputs.publishedPackages)[0].version }}
-        run: |
-          build_info_filename=$(ls -AU artifacts/build-info | head -1)
-          aws s3 cp artifacts/build-info/$build_info_filename s3://$BUCKET_NAME/releases/v$RELEASE_TAG_WITHOUT_PREFIX/build-info.json
