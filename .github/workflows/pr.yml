@@ -18,85 +18,87 @@ jobs:
       - name: Test JSON file
         run: echo "v${{ steps.create-json.outputs.MY_JSON[0] }}"
       - name: Test JSON file
-        run: echo "v${{ fromJSON(steps.create-json.outputs.MY_JSON) }}"
+        run: echo "v${{ fromJSON(steps.create-json.outputs.MY_JSON)[0] }}"
+      - name: Test JSON file
+        run: echo "v${{ fromJSON(steps.create-json.outputs.MY_JSON)[0].name }}"
 
-  simulate-release:
-    name: Simulate release
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.13
-      - name: Install dependencies
-        run: yarn
-      - name: Create artifacts
-        run: yarn compile
-      - name: Compile scripts
-        run: yarn scripts:compile
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-3
-      - name: Download latest release artifacts
-        env:
-          BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
-        run: |
-          mkdir -p releases/latest
-          aws s3 cp s3://$BUCKET_NAME/releases/latest/build-info.json releases/latest/build-info.json || echo "Error: Failed to download latest release from S3."
-      - name: Create diff between artifacts and latest release
-        uses: actions/github-script@v7
-        id: artifacts-diff
-        with:
-          script: |
-            const { generateDiffWithLatest } = await import('${{ github.workspace }}/dist/diff-with-latest.js');
-            const diff = await generateDiffWithLatest();
-            return diff;
-      - name: Create or update comment on PR
-        uses: actions/github-script@v7
-        with:
-          script: |
-            // 1. Retrieve existing bot comments for the PR
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            const existingBotComment = comments.find(comment => {
-              return comment.user.type === 'Bot' && comment.body.includes('Release Plan Output')
-            });
-            // 2. Create new comment with diff
-            console.log(typeof ${{ steps.artifacts-diff.outputs.result }}); // Debugging
-            let output = "#### Release Plan Output";
-            if (${{ steps.artifacts-diff.outputs.result }}.length === 0) {
-              output += "\nNo changes detected in the release artifacts.";
-            } else {
-              output += "\n```";
-              for (const diff of ${{ steps.artifacts-diff.outputs.result }}) {
-                output += "\n";
-                output += `- ${diff.name} (${diff.path}): ${diff.status}`;
-              }
-              output += "\n```";
-            }
-            output += "\n\nComparison is made between the latest release artifacts and the current artifacts generated from the PR code."
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            });
-            // 3. Delete previous comment so PR timeline makes sense
-            if (existingBotComment) {
-              github.rest.issues.deleteComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existingBotComment.id,
-              });
-            }
+  # simulate-release:
+  #   name: Simulate release
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: read
+  #     pull-requests: write
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 20.13
+  #     - name: Install dependencies
+  #       run: yarn
+  #     - name: Create artifacts
+  #       run: yarn compile
+  #     - name: Compile scripts
+  #       run: yarn scripts:compile
+  #     - name: Configure AWS Credentials
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: eu-west-3
+  #     - name: Download latest release artifacts
+  #       env:
+  #         BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+  #       run: |
+  #         mkdir -p releases/latest
+  #         aws s3 cp s3://$BUCKET_NAME/releases/latest/build-info.json releases/latest/build-info.json || echo "Error: Failed to download latest release from S3."
+  #     - name: Create diff between artifacts and latest release
+  #       uses: actions/github-script@v7
+  #       id: artifacts-diff
+  #       with:
+  #         script: |
+  #           const { generateDiffWithLatest } = await import('${{ github.workspace }}/dist/diff-with-latest.js');
+  #           const diff = await generateDiffWithLatest();
+  #           return diff;
+  #     - name: Create or update comment on PR
+  #       uses: actions/github-script@v7
+  #       with:
+  #         script: |
+  #           // 1. Retrieve existing bot comments for the PR
+  #           const { data: comments } = await github.rest.issues.listComments({
+  #             owner: context.repo.owner,
+  #             repo: context.repo.repo,
+  #             issue_number: context.issue.number,
+  #           });
+  #           const existingBotComment = comments.find(comment => {
+  #             return comment.user.type === 'Bot' && comment.body.includes('Release Plan Output')
+  #           });
+  #           // 2. Create new comment with diff
+  #           console.log(typeof ${{ steps.artifacts-diff.outputs.result }}); // Debugging
+  #           let output = "#### Release Plan Output";
+  #           if (${{ steps.artifacts-diff.outputs.result }}.length === 0) {
+  #             output += "\nNo changes detected in the release artifacts.";
+  #           } else {
+  #             output += "\n```";
+  #             for (const diff of ${{ steps.artifacts-diff.outputs.result }}) {
+  #               output += "\n";
+  #               output += `- ${diff.name} (${diff.path}): ${diff.status}`;
+  #             }
+  #             output += "\n```";
+  #           }
+  #           output += "\n\nComparison is made between the latest release artifacts and the current artifacts generated from the PR code."
+  #           github.rest.issues.createComment({
+  #             issue_number: context.issue.number,
+  #             owner: context.repo.owner,
+  #             repo: context.repo.repo,
+  #             body: output
+  #           });
+  #           // 3. Delete previous comment so PR timeline makes sense
+  #           if (existingBotComment) {
+  #             github.rest.issues.deleteComment({
+  #               owner: context.repo.owner,
+  #               repo: context.repo.repo,
+  #               comment_id: existingBotComment.id,
+  #             });
+  #           }
