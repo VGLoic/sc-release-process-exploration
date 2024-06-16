@@ -1,5 +1,11 @@
 # sc-release-process-exploration
 
+## 1.4.7
+
+### Patch Changes
+
+- 7fc09ad: fix script name
+
 ## 1.4.6
 
 ### Patch Changes
