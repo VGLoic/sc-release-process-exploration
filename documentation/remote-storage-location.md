@@ -16,7 +16,8 @@ We will find the same GitHub workdlows than before, but slightly modified:
 - on `push` on `tags`: the `<tag>` release is created locally and then copied to the remote storage,
 - on `pull request`: nothing is updated but we download the `latest` release and we generate a diff with the current state of the `latest` release.
 
-> [!NOTE] We are using [Changesets](https://github.com/changesets/changesets) in order to manage release of the NPM package.
+> [!NOTE]
+> We are using [Changesets](https://github.com/changesets/changesets) in order to manage release of the NPM package.
 > Because of this, we don't rely on the `push on tags` workflow as this part is automated by Changesets.
 > Instead, the `main` workflow executes a particular `release` script that contains the logic upload the new release, download the existing releases and the build for the NPM package.
 
@@ -80,7 +81,8 @@ jobs:
 
 The `tags.yaml` worfklow will handle all the other releases and will be quite similar in terms of jobs.
 
-> [!NOTE] The `tags.yaml` workflow is actually not used when working with Changesets.
+> [!NOTE]
+> The `tags.yaml` workflow is actually not used when working with Changesets.
 > However, it would still be the recommended way of doing things if one was not interested in the automated part of NPM package with Changeset.
 
 ## Deployments
