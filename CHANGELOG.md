@@ -1,5 +1,11 @@
 # sc-release-process-exploration
 
+## 1.4.8
+
+### Patch Changes
+
+- ddfe6aa: Add missing env
+
 ## 1.4.7
 
 ### Patch Changes
