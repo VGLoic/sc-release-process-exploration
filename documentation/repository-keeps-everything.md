@@ -8,6 +8,11 @@ We store the releases artifacts in the `releases` folder which is committed on t
 - on `push` on `tags`: the `<tag>` release is created,
 - on `pull request`: nothing is updated but we generate a diff with the current state of the `latest` release.
 
+> [!NOTE]
+> We are using [Changesets](https://github.com/changesets/changesets) in order to manage release of the NPM package.
+> Because of this, we don't rely on the `push on tags` workflow as this part is automated by Changesets.
+> Instead, the `main` workflow executes a particular `release` script that contains the logic to take into account the new release and the build for the NPM package.
+
 Deployments will be stored in the `deployments` folder which is commited on the `main` branch too. Scripts are written in the repository in order to deploy contracts based on the artifacts contained in the `releases` folder.
 
 A NPM package is created in order to share the ABIs and the deployments.
@@ -53,13 +58,26 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
+          # Script to run logic logic before actually publishing
+          # This is needed as Changesets won't trigger the tags workflow when a new version is published, so we need to do it manually
+          # The steps of the script are:
+          # 1. Commit and push the new release,
+          # 2. Build the artifacts for the NPM package,
+          # 3. Publish the NPM package
           publish: yarn release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 ```
 
+> [!WARNING]
+> The custom `release` script has actually not been tested.
+
 The `tags.yaml` worfklow will handle all the other releases and will be quite similar in terms of jobs.
+
+> [!NOTE]
+> The `tags.yaml` workflow is actually not used when working with Changesets.
+> However, it would still be the recommended way of doing things if one was not interested in the automated part of NPM package with Changeset.
 
 ## Deployments
 
