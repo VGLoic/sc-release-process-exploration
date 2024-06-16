@@ -1,5 +1,11 @@
 # sc-release-process-exploration
 
+## 1.4.4
+
+### Patch Changes
+
+- df6470f: fix release name in upload
+
 ## 1.4.3
 
 ### Patch Changes
