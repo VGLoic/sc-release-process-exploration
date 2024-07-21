@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.13
+          node-version: 20.15.1
       - name: Install dependencies
         run: yarn
       - name: Create artifacts
