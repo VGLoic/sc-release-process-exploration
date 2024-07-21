@@ -25,18 +25,13 @@ jobs:
         run: yarn compile
       - name: Compile scripts
         run: yarn scripts:compile
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-3
-      - name: Download latest release artifacts
+      - name: Pull latest release
         env:
-          BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
-        run: |
-          mkdir -p releases/latest
-          aws s3 cp s3://$BUCKET_NAME/releases/latest/build-info.json releases/latest/build-info.json || echo "Error: Failed to download latest release from S3."
+          AWS_S3_BUCKET: ${{ secrets.S3_BUCKET_NAME }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: eu-west-3
+        run: yarn cli pull -r latest
       - name: Create diff between artifacts and latest release
         uses: actions/github-script@v7
         id: artifacts-diff
