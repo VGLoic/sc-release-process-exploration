@@ -96,3 +96,16 @@ Additional details can be found in the [related documentation](documentation/rem
 ## Version/Release manager
 
 [Changesets](https://github.com/changesets/changesets) is used in order to manage versions here but any other tools can be freely chosen.
+
+1. release
+   - compile without cache in the target folder,
+   - if storage setup,
+     - upload to storage
+2. pull
+   - pull from storage and put in someplace hidden,
+3. prepare
+   - considering what is in the hidden place, derive
+     - mapping for release version -> contracts
+     - mapping for contract -> release versions
+4. list
+   - list all releases

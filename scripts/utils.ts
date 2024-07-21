@@ -1,6 +1,8 @@
 import { BuildInfo, HardhatRuntimeEnvironment } from "hardhat/types";
-import { ArtifactData, DeployOptions } from "hardhat-deploy/dist/types";
+import { DeployOptions } from "hardhat-deploy/dist/types";
 import { Etherscan } from "@nomicfoundation/hardhat-verify/etherscan";
+import { z } from "zod";
+import { setTimeout } from "timers/promises";
 
 /**
  * Retrieve an existing deployment or deploy a new one
@@ -37,14 +39,6 @@ export async function retrieveOrDeploy(
     `\n✔️ The deployment ${deploymentName} has been successfully realised, the deployed contract can be found at address ${deploymentResult.address} \n`,
   );
   return deploymentResult.address;
-}
-
-/**
- * Sleep for a given amount of time
- * @param ms Milliseconds to sleep
- */
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export function semverStringToSemver(s: string) {
@@ -99,24 +93,32 @@ export function findLastRelease(releases: string[]) {
   return lastRelease;
 }
 
-type Result<T> =
-  | {
-      ok: true;
-      data: T;
-    }
-  | {
-      ok: false;
-      error: Error;
-    };
 /**
  * Converts a promise to a promise of a result.
  * @param promise Promise to convert
  * @returns The result of the promise
  */
-export function toResult<T>(promise: Promise<T>): Promise<Result<T>> {
-  return promise
-    .then((data) => ({ ok: true as const, data }))
-    .catch((error) => ({ ok: false as const, error }));
+export function toResult<T>(fn: () => T):
+  | {
+      success: true;
+      data: T;
+    }
+  | {
+      success: false;
+      error: unknown;
+    } {
+  try {
+    const result = fn();
+    return {
+      success: true,
+      data: result,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err,
+    };
+  }
 }
 
 type VerifyPayload = {
@@ -181,7 +183,7 @@ export async function verifyContract(payload: VerifyPayload) {
     } catch (err) {
       const message = (err as any).message as string;
       if (message && message.includes("does not have bytecode")) {
-        await sleep(2_000);
+        await setTimeout(2_000);
         continue;
       }
 
@@ -228,7 +230,7 @@ async function verifyContractOnce(payload: VerifyPayload) {
       payload.encodedConstructorArgs ?? "",
     );
 
-    await sleep(2_000);
+    await setTimeout(2_000);
 
     const verificationStatus = await etherscan.getVerificationStatus(guid);
 
@@ -244,14 +246,12 @@ async function verifyContractOnce(payload: VerifyPayload) {
   }
 }
 
-import { z } from "zod";
-
 export function toAsyncResult<T, TError = Error>(
   promise: Promise<T>,
-): Promise<{ ok: true; value: T } | { ok: false; error: TError }> {
+): Promise<{ success: true; value: T } | { success: false; error: TError }> {
   return promise
-    .then((value) => ({ ok: true as const, value }))
-    .catch((error) => ({ ok: false as const, error }));
+    .then((value) => ({ success: true as const, value }))
+    .catch((error) => ({ success: false as const, error }));
 }
 
 const literalSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
@@ -333,3 +333,16 @@ export const ZBuildInfo = z.object({
     contracts: z.record(z.string(), z.record(z.string(), ZContractInfo)),
   }),
 });
+
+export const LOG_COLORS = {
+  log: "\x1b[0m%s\x1b[0m",
+  success: "\x1b[32m%s\x1b[0m",
+  error: "\x1b[31m%s\x1b[0m",
+  warn: "\x1b[33m%s\x1b[0m",
+};
+
+export class ScriptError extends Error {
+  constructor(message: string) {
+    super(message);
+  }
+}

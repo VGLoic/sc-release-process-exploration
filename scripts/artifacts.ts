@@ -76,7 +76,7 @@ export function release<TRelease extends Release>(releaseKey: TRelease) {
 
 async function getArtifact(contractKey: string, release: string) {
   const buildInfoResult = await toAsyncResult(getReleaseBuildInfo(release));
-  if (!buildInfoResult.ok) {
+  if (!buildInfoResult.success) {
     throw buildInfoResult.error;
   }
 
@@ -118,7 +118,7 @@ export async function getReleaseBuildInfo(release: string) {
       .readFile(`releases/${release}/build-info.json`, "utf-8")
       .then(JSON.parse),
   );
-  if (!buildInfoContentResult.ok) {
+  if (!buildInfoContentResult.success) {
     console.error(buildInfoContentResult.error);
     throw buildInfoContentResult.error;
   }
