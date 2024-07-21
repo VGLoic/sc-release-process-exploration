@@ -59,7 +59,7 @@ export async function pull(
 
   if (opts.release && !remoteReleases.includes(opts.release)) {
     throw new ScriptError(
-      `The release ${opts.release} does not exist in the S3 bucket`,
+      `The release \"${opts.release}\" does not exist in the S3 bucket`,
     );
   }
 
@@ -122,7 +122,7 @@ export async function pull(
     if (opts.release) {
       console.log(
         LOG_COLORS.log,
-        `\nForce flag enabled, starting to pull release ${opts.release}`,
+        `\nForce flag enabled, starting to pull release \"${opts.release}\"`,
       );
       releasesToPull = [opts.release];
     } else {
@@ -142,14 +142,14 @@ export async function pull(
     const getObjectResult = await toAsyncResult(s3.send(getObjectCommand));
     if (!getObjectResult.success) {
       throw new ScriptError(
-        `Error fetching the build-info.json for ${releaseToPull}`,
+        `Error fetching the \"build-info.json\" for release \"${releaseToPull}\"`,
       );
     }
 
     const body = getObjectResult.value.Body;
     if (!body) {
       throw new ScriptError(
-        `Error fetching the build-info.json for ${releaseToPull}`,
+        `Error fetching the \"build-info.json\" for release \"${releaseToPull}\"`,
       );
     }
 
@@ -158,7 +158,7 @@ export async function pull(
     );
     if (!releaseDirectoryCreationResult.success) {
       throw new ScriptError(
-        `Error creating the release directory for ${releaseToPull}`,
+        `Error creating the release directory for \"${releaseToPull}\"`,
       );
     }
 
@@ -170,7 +170,7 @@ export async function pull(
     );
     if (!copyResult.success) {
       throw new ScriptError(
-        `Error copying the build-info.json for ${releaseToPull}`,
+        `Error copying the \"build-info.json\" for release \"${releaseToPull}\"`,
       );
     }
   }
@@ -181,13 +181,13 @@ export async function pull(
         .then(() => {
           console.log(
             LOG_COLORS.success,
-            `\nSuccessfully pulled ${releaseToPull}`,
+            `\nSuccessfully pulled release \"${releaseToPull}\"`,
           );
         })
         .catch((err) => {
           console.error(
             LOG_COLORS.error,
-            `\nError pulling ${releaseToPull}: ${err.message}`,
+            `\nError pulling release \"${releaseToPull}\": ${err.message}`,
           );
           throw err;
         }),

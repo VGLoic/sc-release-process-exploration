@@ -89,7 +89,7 @@ program
     if (optsParsingResult.data.release) {
       console.log(
         LOG_COLORS.log,
-        `\nPulling the release ${optsParsingResult.data.release} from the S3 bucket`,
+        `\nPulling the release "${optsParsingResult.data.release}" from the S3 bucket`,
       );
     } else {
       console.log(
@@ -203,7 +203,7 @@ program
 
     console.log(
       LOG_COLORS.log,
-      `\nPushing release ${release} artifact to the S3 bucket`,
+      `\nPushing release "${release}" artifact to the S3 bucket`,
     );
 
     const pushResult = await toAsyncResult(
@@ -228,7 +228,10 @@ program
       process.exitCode = 1;
       return;
     }
-    console.log(LOG_COLORS.success, `\nRelease ${release} pushed successfully`);
+    console.log(
+      LOG_COLORS.success,
+      `\nRelease "${release}" pushed successfully`,
+    );
   });
 
 program

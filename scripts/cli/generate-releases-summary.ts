@@ -30,7 +30,7 @@ export async function generateReleasesSummary(filterSimilarContracts: boolean) {
   // Check if the `releases` folder exists
   const doesReleasesFolderExist = await fs.stat("releases").catch(() => false);
   if (!doesReleasesFolderExist) {
-    throw new ScriptError("The `releases` folder does not exist");
+    throw new ScriptError('The "releases" folder does not exist');
   }
 
   // Get the list of releases as directories in the `releases` folder
@@ -38,7 +38,7 @@ export async function generateReleasesSummary(filterSimilarContracts: boolean) {
     fs.readdir("releases", { withFileTypes: true }),
   );
   if (!releasesEntriesResult.success) {
-    throw new ScriptError("Error reading the `releases` folder");
+    throw new ScriptError('Error reading the "releases" folder');
   }
   const releaseNames = releasesEntriesResult.value
     .filter((dirent) => dirent.isDirectory())
@@ -125,7 +125,7 @@ export async function generateReleasesSummary(filterSimilarContracts: boolean) {
     for (const release of contractReleases) {
       if (!contractsPerReleases[release]) {
         throw new ScriptError(
-          `Release ${release} not found in contractsPerReleases`,
+          `Release \"${release}\" not found in contractsPerReleases`,
         );
       }
       contractsPerReleases[release].push(contractKey);
@@ -196,7 +196,7 @@ async function getReleaseBuildInfo(release: string) {
     .catch(() => false);
   if (!buildInfoExists) {
     throw new ScriptError(
-      `build-info.json not found for release ${release}. Skipping`,
+      `\"build-info.json\" not found for release \"${release}\". Skipping`,
     );
   }
   const buildInfoContentResult = await toAsyncResult(

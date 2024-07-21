@@ -83,7 +83,7 @@ export async function generateDiffWithLatest(): Promise<Difference[]> {
   const freshBuildInfoResult = await toAsyncResult(retrieveFreshBuildInfo());
   if (!freshBuildInfoResult.success) {
     throw new ScriptError(
-      `Error retrieving the build info for the compilation. Please, make sure to have a unique build info file in the artifacts/build-info folder.`,
+      `Error retrieving the build info for the compilation. Please, make sure to have a unique build info file in the "artifacts/build-info" folder.`,
     );
   }
 
@@ -104,7 +104,7 @@ export async function generateDiffWithLatest(): Promise<Difference[]> {
   if (!hasLatestRelease) {
     console.log(
       LOG_COLORS.warn,
-      "The latest release has not been found locally. All contracts are considered as added. If this is not expected, please run the `pull` command first.",
+      'The "latest" release has not been found locally. All contracts are considered as added. If this is not expected, please run the `pull` command first.',
     );
     const differences: Difference[] = [];
     for (const contractKey of virtualReleaseContractHashesResult.value.keys()) {
