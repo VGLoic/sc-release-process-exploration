@@ -125,7 +125,7 @@ export async function generateReleasesSummary(filterSimilarContracts: boolean) {
     for (const release of contractReleases) {
       if (!contractsPerReleases[release]) {
         throw new ScriptError(
-          `Release \"${release}\" not found in contractsPerReleases`,
+          `Release "${release}" not found in contractsPerReleases`,
         );
       }
       contractsPerReleases[release].push(contractKey);
@@ -196,7 +196,7 @@ async function getReleaseBuildInfo(release: string) {
     .catch(() => false);
   if (!buildInfoExists) {
     throw new ScriptError(
-      `\"build-info.json\" not found for release \"${release}\". Skipping`,
+      `"build-info.json" not found for release "${release}". Skipping`,
     );
   }
   const buildInfoContentResult = await toAsyncResult(
@@ -218,12 +218,6 @@ async function getReleaseBuildInfo(release: string) {
   return buildInfoResult.data;
 }
 
-type SemanticVersion = {
-  patch: number;
-  minor: number;
-  major: number;
-};
-
 function isSemanticVersion(s: string) {
   if (!s.startsWith("v")) return false;
   const parts = s.substring(1).split(".");
@@ -238,26 +232,4 @@ function isSemanticVersion(s: string) {
   )
     return false;
   return true;
-}
-
-function toSemanticVersion(s: string) {
-  if (!isSemanticVersion(s)) {
-    throw new ScriptError(
-      `Unable to convert string "${s}" to semantic version`,
-    );
-  }
-  const [major, minor, patch] = s.substring(1).split(".").map(Number);
-  return {
-    patch,
-    minor,
-    major,
-  };
-}
-
-function cmp(a: SemanticVersion, b: SemanticVersion) {
-  return b.major !== a.major
-    ? b.major - a.major
-    : b.minor !== a.minor
-    ? b.minor - a.minor
-    : b.patch - a.patch;
 }

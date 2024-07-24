@@ -7,8 +7,10 @@
     "deployments-summary.json"
   ],
   "scripts": {
+    "format:check": "prettier --check --ignore-unknown --plugin=prettier-plugin-solidity 'src/**/*.sol' \"scripts\"",
     "format:contracts": "prettier --write --plugin=prettier-plugin-solidity 'src/**/*.sol'",
     "format": "prettier --write --plugin=prettier-plugin-solidity 'src/**/*.sol' 'scripts/**/*.ts'",
+    "lint": "eslint 'scripts'",
     "compile": "yarn format:contracts && hardhat compile --force --no-typechain",
     "release": "./.github/release.sh",
     "scripts:compile": "tsup scripts/cli/diff-with-latest.ts",
@@ -22,6 +24,7 @@
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.616.0",
     "@changesets/cli": "^2.27.1",
+    "@eslint/js": "^9.7.0",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
     "@nomicfoundation/hardhat-ethers": "^3.0.0",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
@@ -32,11 +35,13 @@
     "@typechain/ethers-v6": "^0.4.0",
     "@typechain/hardhat": "^8.0.0",
     "@types/chai": "^4.2.0",
+    "@types/eslint__js": "^8.42.3",
     "@types/mocha": ">=9.1.0",
     "@types/node": ">=16.0.0",
     "chai": "^4.2.0",
     "commander": "^12.1.0",
     "dotenv": "^16.3.1",
+    "eslint": "^9.7.0",
     "ethers": "^6.8.0",
     "hardhat": "^2.18.1",
     "hardhat-deploy": "^0.11.42",
@@ -48,7 +53,8 @@
     "ts-node": ">=8.0.0",
     "tsup": "^8.0.1",
     "typechain": "^8.1.0",
-    "typescript": ">=4.5.0",
+    "typescript": "^5.5.4",
+    "typescript-eslint": "^7.17.0",
     "zod": "^3.23.8"
   }
 }

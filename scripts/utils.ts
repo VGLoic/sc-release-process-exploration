@@ -181,6 +181,7 @@ export async function verifyContract(payload: VerifyPayload) {
       await verifyContractOnce(payload);
       return;
     } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const message = (err as any).message as string;
       if (message && message.includes("does not have bytecode")) {
         await setTimeout(2_000);
@@ -216,33 +217,29 @@ async function verifyContractOnce(payload: VerifyPayload) {
     return;
   }
 
-  try {
-    const { message: guid } = await etherscan.verify(
-      // Contract address
-      payload.address,
-      // Inputs
-      JSON.stringify(payload.sourceCode),
-      // Contract full name
-      `${payload.sourceName}:${payload.contractName}`,
-      // Compiler version
-      `v${payload.compilerVersion}`,
-      // Encoded constructor arguments
-      payload.encodedConstructorArgs ?? "",
+  const { message: guid } = await etherscan.verify(
+    // Contract address
+    payload.address,
+    // Inputs
+    JSON.stringify(payload.sourceCode),
+    // Contract full name
+    `${payload.sourceName}:${payload.contractName}`,
+    // Compiler version
+    `v${payload.compilerVersion}`,
+    // Encoded constructor arguments
+    payload.encodedConstructorArgs ?? "",
+  );
+
+  await setTimeout(2_000);
+
+  const verificationStatus = await etherscan.getVerificationStatus(guid);
+
+  if (verificationStatus.isSuccess()) {
+    console.log(
+      `Successfully verified contract ${payload.sourceName}:${payload.contractName}`,
     );
-
-    await setTimeout(2_000);
-
-    const verificationStatus = await etherscan.getVerificationStatus(guid);
-
-    if (verificationStatus.isSuccess()) {
-      console.log(
-        `Successfully verified contract ${payload.sourceName}:${payload.contractName}`,
-      );
-    } else {
-      throw new Error(verificationStatus.message);
-    }
-  } catch (err) {
-    throw err;
+  } else {
+    throw new Error(verificationStatus.message);
   }
 }
 
