@@ -1,6 +1,7 @@
 import fs from "fs/promises";
-import { ScriptError, ZBuildInfo, toAsyncResult } from "../utils";
+import { ZBuildInfo, toAsyncResult } from "../utils";
 import { createHash } from "crypto";
+import { ScriptError } from "./utils";
 
 /**
  * Based from the `releases` folder content, generate a `summary.ts` file in `releases/generated` folder. A JSON file is also generated.
@@ -219,8 +220,11 @@ async function getReleaseBuildInfo(release: string) {
 }
 
 function isSemanticVersion(s: string) {
-  if (!s.startsWith("v")) return false;
-  const parts = s.substring(1).split(".");
+  let consideredString = s;
+  if (s.startsWith("v")) {
+    consideredString = s.substring(1);
+  }
+  const parts = consideredString.split(".");
   if (parts.length === 0) return false;
   if (parts.length > 3) return false;
   if (

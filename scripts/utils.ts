@@ -41,58 +41,6 @@ export async function retrieveOrDeploy(
   return deploymentResult.address;
 }
 
-export function semverStringToSemver(s: string) {
-  if (!/^v\d+\.\d+\.\d+$/.test(s)) {
-    throw new Error("Invalid semver string");
-  }
-  const versions = s
-    .slice(1)
-    .split(".")
-    .map((n) => parseInt(n));
-  if (versions.some((n) => isNaN(n))) {
-    throw new Error("Invalid semver string");
-  }
-
-  return { major: versions[0], minor: versions[1], patch: versions[2] };
-}
-
-export function findLastRelease(releases: string[]) {
-  if (releases.some((r) => !/^v\d+\.\d+\.\d+$/.test(r))) {
-    throw new Error("Invalid release names");
-  }
-  let lastRelease = {
-    name: releases[0],
-    semver: semverStringToSemver(releases[0]),
-  };
-  for (let i = 1; i < releases.length; i++) {
-    const release = releases[i];
-    const semver = semverStringToSemver(release);
-    if (semver.major > lastRelease.semver.major) {
-      lastRelease = {
-        name: release,
-        semver,
-      };
-    }
-    if (semver.major === lastRelease.semver.major) {
-      if (semver.minor > lastRelease.semver.minor) {
-        lastRelease = {
-          name: release,
-          semver,
-        };
-      }
-      if (semver.minor === lastRelease.semver.minor) {
-        if (semver.patch > lastRelease.semver.patch) {
-          lastRelease = {
-            name: release,
-            semver,
-          };
-        }
-      }
-    }
-  }
-  return lastRelease;
-}
-
 /**
  * Converts a promise to a promise of a result.
  * @param promise Promise to convert
@@ -330,16 +278,3 @@ export const ZBuildInfo = z.object({
     contracts: z.record(z.string(), z.record(z.string(), ZContractInfo)),
   }),
 });
-
-export const LOG_COLORS = {
-  log: "\x1b[0m%s\x1b[0m",
-  success: "\x1b[32m%s\x1b[0m",
-  error: "\x1b[31m%s\x1b[0m",
-  warn: "\x1b[33m%s\x1b[0m",
-};
-
-export class ScriptError extends Error {
-  constructor(message: string) {
-    super(message);
-  }
-}

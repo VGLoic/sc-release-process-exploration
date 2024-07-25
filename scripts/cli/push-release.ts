@@ -4,8 +4,8 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { NodeJsClient } from "@smithy/types";
-import { LOG_COLORS, ScriptError, toAsyncResult } from "../utils";
-import { retrieveFreshBuildInfo } from "./utils";
+import { toAsyncResult } from "../utils";
+import { LOG_COLORS, retrieveFreshBuildInfo, ScriptError } from "./utils";
 
 export async function pushRelease(
   release: string,

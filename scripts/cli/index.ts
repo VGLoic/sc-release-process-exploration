@@ -2,11 +2,12 @@ import { Command } from "commander";
 import { generateReleasesSummary } from "./generate-releases-summary";
 import { z } from "zod";
 import dotenv from "dotenv";
-import { LOG_COLORS, ScriptError, toAsyncResult } from "../utils";
+import { toAsyncResult } from "../utils";
 import { pull } from "./pull";
 import { retrieveReleasesSummary } from "./retrieve-releases-summary";
 import { pushRelease } from "./push-release";
 import { generateDiffWithLatest } from "./diff-with-latest";
+import { LOG_COLORS, ScriptError } from "./utils";
 dotenv.config();
 
 const program = new Command()

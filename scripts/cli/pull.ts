@@ -4,8 +4,9 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import fs from "fs/promises";
-import { LOG_COLORS, ScriptError, toAsyncResult } from "../utils";
+import { toAsyncResult } from "../utils";
 import { NodeJsClient } from "@smithy/types";
+import { LOG_COLORS, ScriptError } from "./utils";
 
 /**
  * Pulls releases from an S3 bucket

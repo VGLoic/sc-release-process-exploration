@@ -1,6 +1,7 @@
 import fs from "fs/promises";
-import { ScriptError, toAsyncResult } from "../utils";
+import { toAsyncResult } from "../utils";
 import { z } from "zod";
+import { ScriptError } from "./utils";
 
 export async function retrieveReleasesSummary() {
   const releasesExist = await fs.stat("releases").catch(() => false);
