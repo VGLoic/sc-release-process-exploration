@@ -1,12 +1,7 @@
-import {
-  GetObjectCommand,
-  ListObjectsCommand,
-  S3Client,
-} from "@aws-sdk/client-s3";
 import fs from "fs/promises";
 import { toAsyncResult } from "../utils";
-import { NodeJsClient } from "@smithy/types";
 import { LOG_COLORS, ScriptError } from "./utils";
+import { S3BucketProvider } from "./s3-bucket-provider";
 
 /**
  * Pulls releases from an S3 bucket
@@ -27,35 +22,22 @@ export async function pull(
     secretAccessKey: string;
   },
 ) {
-  const s3: NodeJsClient<S3Client> = new S3Client({
-    region: awsConfig.bucketRegion,
-    credentials: {
-      accessKeyId: awsConfig.accessKeyId,
-      secretAccessKey: awsConfig.secretAccessKey,
-    },
-  });
+  const s3BucketProvider = new S3BucketProvider(awsConfig);
 
-  // List what's in the bucket
-  const result = await s3.send(
-    new ListObjectsCommand({
-      Bucket: awsConfig.bucketName,
-      Delimiter: "/",
-      Prefix: "releases/",
-    }),
+  const remoteReleasesResult = await toAsyncResult(
+    s3BucketProvider.listReleases(),
   );
-  const commonPrefixes = result.CommonPrefixes;
-  if (!commonPrefixes) {
+  if (!remoteReleasesResult.success) {
+    throw new ScriptError("Error listing the releases in the storage");
+  }
+  const remoteReleases = remoteReleasesResult.value;
+
+  if (remoteReleases.length === 0) {
     return {
       remoteReleases: [],
       pulledReleases: [],
       failedReleases: [],
     };
-  }
-  const remoteReleases = [];
-  for (const prefix of commonPrefixes) {
-    const raw = prefix.Prefix;
-    if (!raw) continue;
-    remoteReleases.push(raw.replace("releases/", "").replace("/", ""));
   }
 
   if (opts.release && !remoteReleases.includes(opts.release)) {
@@ -136,21 +118,12 @@ export async function pull(
   }
 
   async function pullRelease(releaseToPull: string) {
-    const getObjectCommand = new GetObjectCommand({
-      Bucket: awsConfig.bucketName,
-      Key: `releases/${releaseToPull}/build-info.json`,
-    });
-    const getObjectResult = await toAsyncResult(s3.send(getObjectCommand));
-    if (!getObjectResult.success) {
+    const releaseContentResult = await toAsyncResult(
+      s3BucketProvider.pullRelease(releaseToPull),
+    );
+    if (!releaseContentResult.success) {
       throw new ScriptError(
-        `Error fetching the "build-info.json" for release "${releaseToPull}"`,
-      );
-    }
-
-    const body = getObjectResult.value.Body;
-    if (!body) {
-      throw new ScriptError(
-        `Error fetching the "build-info.json" for release "${releaseToPull}"`,
+        `Error pulling the release "${releaseToPull}" from the storage`,
       );
     }
 
@@ -167,7 +140,7 @@ export async function pull(
       fs.writeFile(
         `releases/${releaseToPull}/build-info.json`,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        body.transformToWebStream() as any,
+        releaseContentResult.value.transformToWebStream() as any,
       ),
     );
     if (!copyResult.success) {
