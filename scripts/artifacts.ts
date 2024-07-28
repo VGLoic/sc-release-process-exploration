@@ -3,6 +3,9 @@ import fs from "fs/promises";
 import * as releasesSummary from "../releases/generated/summary";
 import { ZBuildInfo, toAsyncResult } from "./utils";
 
+// eslint-disable-next-line @typescript-eslint/ban-types
+export type FallbackString = string & {};
+
 /**
  * Utility functions for a given contract
  * @param contractKey Key of the contract formatted as "path/to/Contract.sol/Contract"
@@ -13,9 +16,9 @@ import { ZBuildInfo, toAsyncResult } from "./utils";
  * const counterArtifact = await counterUtils.getArtifact("v1.3.1");
  * ```
  */
-export function contract<TContract extends releasesSummary.Contract>(
-  contractKey: TContract,
-) {
+export function contract<
+  TContract extends releasesSummary.Contract | FallbackString,
+>(contractKey: TContract) {
   return {
     /**
      * Retrieve the contract artifact for a given release
@@ -26,7 +29,9 @@ export function contract<TContract extends releasesSummary.Contract>(
      * ```
      */
     getArtifact(
-      release: releasesSummary.AvailableReleaseForContract<TContract>,
+      release: TContract extends releasesSummary.Contract
+        ? releasesSummary.AvailableReleaseForContract<TContract>
+        : FallbackString,
     ) {
       return getArtifact(contractKey, release);
     },
@@ -34,7 +39,17 @@ export function contract<TContract extends releasesSummary.Contract>(
      * Get the available releases for the contract
      * @returns The available releases for the contract
      */
-    getAvailableReleases: () => releasesSummary.CONTRACTS[contractKey],
+    getAvailableReleases: (): TContract extends releasesSummary.Contract
+      ? (typeof releasesSummary.CONTRACTS)[TContract]
+      : string[] => {
+      if (contractKey in releasesSummary.CONTRACTS) {
+        return releasesSummary.CONTRACTS[
+          contractKey as releasesSummary.Contract
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ] as any;
+      }
+      throw new Error(`Contract not found for contract key: ${contractKey}`);
+    },
   };
 }
 
@@ -48,9 +63,9 @@ export function contract<TContract extends releasesSummary.Contract>(
  * const incrementOracleArtifact = await v1_3_1Utils.getContractArtifact("src/IncrementOracle.sol/IncrementOracle");
  * ```
  */
-export function release<TRelease extends releasesSummary.Release>(
-  releaseKey: TRelease,
-) {
+export function release<
+  TRelease extends releasesSummary.Release | FallbackString,
+>(releaseKey: TRelease) {
   return {
     /**
      * Retrieve the contract artifact for a given contract
@@ -60,8 +75,10 @@ export function release<TRelease extends releasesSummary.Release>(
      * const incrementOracleArtifact = await release("v1.3.1").getContractArtifact("src/IncrementOracle.sol/IncrementOracle");
      * ```
      */
-    getContractArtifact<TContract extends releasesSummary.Contract>(
-      contractKey: TContract,
+    getContractArtifact(
+      contractKey: TRelease extends releasesSummary.Release
+        ? releasesSummary.AvailableContractForRelease<TRelease>
+        : FallbackString,
     ) {
       return getArtifact(contractKey, releaseKey);
     },
@@ -69,7 +86,17 @@ export function release<TRelease extends releasesSummary.Release>(
      * Get the available contracts for the release
      * @returns The available contracts for the release
      */
-    getAvailableContracts: () => releasesSummary.RELEASES[releaseKey],
+    getAvailableContracts: (): TRelease extends releasesSummary.Release
+      ? (typeof releasesSummary.RELEASES)[TRelease]
+      : string[] => {
+      if (releaseKey in releasesSummary.RELEASES) {
+        return releasesSummary.RELEASES[
+          releaseKey as releasesSummary.Release
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ] as any;
+      }
+      throw new Error(`Release not found for release: ${releaseKey}`);
+    },
   };
 }
 
