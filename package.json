@@ -19,7 +19,8 @@
     "hardhat:node": "hardhat node",
     "release:build-exposed-abis": "ts-node --files scripts/build-exposed-abis.ts",
     "release:build-deployments-summary": "ts-node --files scripts/build-deployments-summary.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "postinstall": "yarn cli generate-typings"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.616.0",
