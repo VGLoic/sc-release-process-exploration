@@ -4,7 +4,7 @@ import * as releasesSummary from "../releases/generated/summary";
 import { ZBuildInfo, toAsyncResult } from "./utils";
 
 // eslint-disable-next-line @typescript-eslint/ban-types
-export type FallbackString = string & {};
+type FallbackString = string & {};
 
 /**
  * Utility functions for a given contract
@@ -29,9 +29,11 @@ export function contract<
      * ```
      */
     getArtifact(
-      release: TContract extends releasesSummary.Contract
+      release: releasesSummary.Contract extends never
+        ? string
+        : TContract extends releasesSummary.Contract
         ? releasesSummary.AvailableReleaseForContract<TContract>
-        : FallbackString,
+        : never,
     ) {
       return getArtifact(contractKey, release);
     },
@@ -78,7 +80,7 @@ export function release<
     getContractArtifact(
       contractKey: TRelease extends releasesSummary.Release
         ? releasesSummary.AvailableContractForRelease<TRelease>
-        : FallbackString,
+        : string,
     ) {
       return getArtifact(contractKey, releaseKey);
     },
@@ -101,7 +103,10 @@ export function release<
 }
 
 async function getArtifact(contractKey: string, release: string) {
-  const buildInfoResult = await toAsyncResult(getReleaseBuildInfo(release));
+  const buildInfoResult = await toAsyncResult(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getReleaseBuildInfo(release as any),
+  );
   if (!buildInfoResult.success) {
     throw buildInfoResult.error;
   }
@@ -130,7 +135,11 @@ async function getArtifact(contractKey: string, release: string) {
   return contractArtifact;
 }
 
-export async function getReleaseBuildInfo(release: string) {
+export async function getReleaseBuildInfo(
+  release: releasesSummary.Release extends never
+    ? string
+    : releasesSummary.Release,
+) {
   const buildInfoExists = await fs
     .stat(`releases/${release}/build-info.json`)
     .catch(() => false);
