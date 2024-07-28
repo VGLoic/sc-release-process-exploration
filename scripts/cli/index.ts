@@ -8,50 +8,12 @@ import { retrieveReleasesSummary } from "./retrieve-releases-summary";
 import { pushRelease } from "./push-release";
 import { generateDiffWithLatest } from "./diff-with-latest";
 import { LOG_COLORS, ScriptError } from "./utils";
+import { S3BucketProvider } from "./s3-bucket-provider";
 dotenv.config();
 
 const program = new Command()
   .version("0.0.1")
   .description("A simple CLI program");
-
-program
-  .command("describe")
-  .description("Describe releases and their contents")
-  .action(async () => {
-    const releasesSummaryResult = await toAsyncResult(
-      retrieveReleasesSummary(),
-    );
-    if (!releasesSummaryResult.success) {
-      if (releasesSummaryResult.error instanceof ScriptError) {
-        console.log(
-          LOG_COLORS.error,
-          "❌ ",
-          releasesSummaryResult.error.message,
-        );
-        process.exitCode = 1;
-        return;
-      }
-      console.log(
-        LOG_COLORS.error,
-        "❌ ",
-        "An unexpected error occurred: ",
-        releasesSummaryResult.error,
-      );
-      process.exitCode = 1;
-      return;
-    }
-
-    console.log(LOG_COLORS.log, "Available releases:");
-    for (const release of Object.keys(releasesSummaryResult.value.releases)) {
-      const contracts = releasesSummaryResult.value.releases[release];
-      console.log(LOG_COLORS.log, ` - ${release}`);
-      console.log(LOG_COLORS.log, "   - Contracts:");
-      for (const contract of contracts) {
-        const [contractPath, contractName] = contract.split(":");
-        console.log(LOG_COLORS.log, `     - ${contractName} (${contractPath})`);
-      }
-    }
-  });
 
 program
   .command("pull")
@@ -75,6 +37,17 @@ program
       process.exitCode = 1;
       return;
     }
+
+    console.log(
+      LOG_COLORS.log,
+      "\nEnvironment variables for AWS S3 bucket detected for Release Storage Provider",
+    );
+    const releaseStorageProvider = new S3BucketProvider({
+      bucketName: envParsingResult.data.AWS_S3_BUCKET,
+      bucketRegion: envParsingResult.data.AWS_REGION,
+      accessKeyId: envParsingResult.data.AWS_ACCESS_KEY_ID,
+      secretAccessKey: envParsingResult.data.AWS_SECRET_ACCESS_KEY,
+    });
 
     const optsParsingResult = z
       .object({
@@ -101,12 +74,7 @@ program
     }
 
     const pullResult = await toAsyncResult(
-      pull(optsParsingResult.data, {
-        bucketName: envParsingResult.data.AWS_S3_BUCKET,
-        bucketRegion: envParsingResult.data.AWS_REGION,
-        accessKeyId: envParsingResult.data.AWS_ACCESS_KEY_ID,
-        secretAccessKey: envParsingResult.data.AWS_SECRET_ACCESS_KEY,
-      }),
+      pull(optsParsingResult.data, releaseStorageProvider),
     );
     if (!pullResult.success) {
       if (pullResult.error instanceof ScriptError) {
@@ -187,6 +155,17 @@ program
       return;
     }
 
+    console.log(
+      LOG_COLORS.log,
+      "\nEnvironment variables for AWS S3 bucket detected for Release Storage Provider",
+    );
+    const releaseStorageProvider = new S3BucketProvider({
+      bucketName: envParsingResult.data.AWS_S3_BUCKET,
+      bucketRegion: envParsingResult.data.AWS_REGION,
+      accessKeyId: envParsingResult.data.AWS_ACCESS_KEY_ID,
+      secretAccessKey: envParsingResult.data.AWS_SECRET_ACCESS_KEY,
+    });
+
     if (!release) {
       console.log(LOG_COLORS.error, "❌ No release provided");
       process.exitCode = 1;
@@ -210,12 +189,7 @@ program
     );
 
     const pushResult = await toAsyncResult(
-      pushRelease(release, optsParsingResult.data, {
-        bucketName: envParsingResult.data.AWS_S3_BUCKET,
-        bucketRegion: envParsingResult.data.AWS_REGION,
-        accessKeyId: envParsingResult.data.AWS_ACCESS_KEY_ID,
-        secretAccessKey: envParsingResult.data.AWS_SECRET_ACCESS_KEY,
-      }),
+      pushRelease(release, optsParsingResult.data, releaseStorageProvider),
     );
     if (!pushResult.success) {
       if (pushResult.error instanceof ScriptError) {
@@ -235,6 +209,48 @@ program
       LOG_COLORS.success,
       `\nRelease "${release}" pushed successfully`,
     );
+  });
+
+program
+  .command("describe")
+  .description("Describe releases and their contents")
+  .action(async () => {
+    const releasesSummaryResult = await toAsyncResult(
+      retrieveReleasesSummary(),
+    );
+    if (!releasesSummaryResult.success) {
+      if (releasesSummaryResult.error instanceof ScriptError) {
+        console.log(
+          LOG_COLORS.error,
+          "❌ ",
+          releasesSummaryResult.error.message,
+        );
+        process.exitCode = 1;
+        return;
+      }
+      console.log(
+        LOG_COLORS.error,
+        "❌ ",
+        "An unexpected error occurred: ",
+        releasesSummaryResult.error,
+      );
+      process.exitCode = 1;
+      return;
+    }
+
+    console.log(LOG_COLORS.log, "Available releases:");
+    for (const release of Object.keys(releasesSummaryResult.value.releases)) {
+      const contracts = releasesSummaryResult.value.releases[release];
+      console.log(LOG_COLORS.log, ` - ${release}`);
+      if (contracts.length === 0) {
+        console.log(LOG_COLORS.warn, "   No new or updated contracts found");
+        continue;
+      }
+      for (const contract of contracts) {
+        const [contractPath, contractName] = contract.split(":");
+        console.log(LOG_COLORS.log, `   - ${contractName} (${contractPath})`);
+      }
+    }
   });
 
 program

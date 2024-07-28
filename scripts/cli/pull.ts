@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import { toAsyncResult } from "../utils";
 import { LOG_COLORS, ScriptError } from "./utils";
-import { S3BucketProvider } from "./s3-bucket-provider";
+import { ReleaseStorageProvider } from "./s3-bucket-provider";
 
 /**
  * Pulls releases from an S3 bucket
@@ -15,17 +15,10 @@ import { S3BucketProvider } from "./s3-bucket-provider";
  */
 export async function pull(
   opts: { force: boolean; release?: string },
-  awsConfig: {
-    bucketName: string;
-    bucketRegion: string;
-    accessKeyId: string;
-    secretAccessKey: string;
-  },
+  releaseStorageProvider: ReleaseStorageProvider,
 ) {
-  const s3BucketProvider = new S3BucketProvider(awsConfig);
-
   const remoteReleasesResult = await toAsyncResult(
-    s3BucketProvider.listReleases(),
+    releaseStorageProvider.listReleases(),
   );
   if (!remoteReleasesResult.success) {
     throw new ScriptError("Error listing the releases in the storage");
@@ -119,7 +112,7 @@ export async function pull(
 
   async function pullRelease(releaseToPull: string) {
     const releaseContentResult = await toAsyncResult(
-      s3BucketProvider.pullRelease(releaseToPull),
+      releaseStorageProvider.pullRelease(releaseToPull),
     );
     if (!releaseContentResult.success) {
       throw new ScriptError(
@@ -139,8 +132,7 @@ export async function pull(
     const copyResult = await toAsyncResult(
       fs.writeFile(
         `releases/${releaseToPull}/build-info.json`,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        releaseContentResult.value.transformToWebStream() as any,
+        releaseContentResult.value,
       ),
     );
     if (!copyResult.success) {

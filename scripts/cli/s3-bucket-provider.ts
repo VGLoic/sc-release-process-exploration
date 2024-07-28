@@ -6,6 +6,13 @@ import {
 } from "@aws-sdk/client-s3";
 import { NodeJsClient } from "@smithy/types";
 
+export interface ReleaseStorageProvider {
+  hasRelease(release: string): Promise<boolean>;
+  pushRelease(release: string, content: string): Promise<string>;
+  listReleases(): Promise<string[]>;
+  pullRelease(release: string): Promise<ReadableStream>;
+}
+
 type S3BucketProviderConfig = {
   bucketName: string;
   bucketRegion: string;
@@ -13,7 +20,7 @@ type S3BucketProviderConfig = {
   secretAccessKey: string;
   prefix?: string;
 };
-export class S3BucketProvider {
+export class S3BucketProvider implements ReleaseStorageProvider {
   private readonly config: S3BucketProviderConfig;
   private readonly client: NodeJsClient<S3Client>;
   private readonly releasePath: string;
@@ -85,6 +92,7 @@ export class S3BucketProvider {
     if (!getObjectResult.Body) {
       throw new Error("Error fetching the build info");
     }
-    return getObjectResult.Body;
+    const body = getObjectResult.Body;
+    return body.transformToWebStream();
   }
 }

@@ -1,21 +1,14 @@
 import { toAsyncResult } from "../utils";
 import { LOG_COLORS, retrieveFreshBuildInfo, ScriptError } from "./utils";
-import { S3BucketProvider } from "./s3-bucket-provider";
+import { ReleaseStorageProvider } from "./s3-bucket-provider";
 
 export async function pushRelease(
   release: string,
   opts: {
     force: boolean;
   },
-  awsConfig: {
-    bucketName: string;
-    bucketRegion: string;
-    accessKeyId: string;
-    secretAccessKey: string;
-  },
+  releaseStorageProvider: ReleaseStorageProvider,
 ) {
-  const s3BucketProvider = new S3BucketProvider(awsConfig);
-
   const freshBuildInfoResult = await toAsyncResult(retrieveFreshBuildInfo());
   if (!freshBuildInfoResult.success) {
     throw new ScriptError(
@@ -24,7 +17,7 @@ export async function pushRelease(
   }
 
   const hasReleaseResult = await toAsyncResult(
-    s3BucketProvider.hasRelease(release),
+    releaseStorageProvider.hasRelease(release),
   );
   if (!hasReleaseResult.success) {
     throw new ScriptError(
@@ -46,7 +39,10 @@ export async function pushRelease(
   }
 
   const pushResult = await toAsyncResult(
-    s3BucketProvider.pushRelease(release, freshBuildInfoResult.value.content),
+    releaseStorageProvider.pushRelease(
+      release,
+      freshBuildInfoResult.value.content,
+    ),
   );
 
   if (!pushResult.success) {
