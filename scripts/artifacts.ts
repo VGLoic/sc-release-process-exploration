@@ -3,15 +3,6 @@ import fs from "fs/promises";
 import * as releasesSummary from "../releases/generated/summary";
 import { ZBuildInfo, toAsyncResult } from "./utils";
 
-export type Contract = keyof typeof releasesSummary.CONTRACTS;
-export type Release = keyof typeof releasesSummary.RELEASES;
-
-export type AvailableReleaseForContract<TContract extends Contract> =
-  (typeof releasesSummary.CONTRACTS)[TContract][number];
-
-export type AvailableContractForRelease<TRelease extends Release> =
-  (typeof releasesSummary.RELEASES)[TRelease][number];
-
 /**
  * Utility functions for a given contract
  * @param contractKey Key of the contract formatted as "path/to/Contract.sol/Contract"
@@ -22,7 +13,9 @@ export type AvailableContractForRelease<TRelease extends Release> =
  * const counterArtifact = await counterUtils.getArtifact("v1.3.1");
  * ```
  */
-export function contract<TContract extends Contract>(contractKey: TContract) {
+export function contract<TContract extends releasesSummary.Contract>(
+  contractKey: TContract,
+) {
   return {
     /**
      * Retrieve the contract artifact for a given release
@@ -32,7 +25,9 @@ export function contract<TContract extends Contract>(contractKey: TContract) {
      * const counterArtifact = await contract("src/Counter.sol/Counter").getArtifact("v1.3.1");
      * ```
      */
-    getArtifact(release: AvailableReleaseForContract<TContract>) {
+    getArtifact(
+      release: releasesSummary.AvailableReleaseForContract<TContract>,
+    ) {
       return getArtifact(contractKey, release);
     },
     /**
@@ -53,7 +48,9 @@ export function contract<TContract extends Contract>(contractKey: TContract) {
  * const incrementOracleArtifact = await v1_3_1Utils.getContractArtifact("src/IncrementOracle.sol/IncrementOracle");
  * ```
  */
-export function release<TRelease extends Release>(releaseKey: TRelease) {
+export function release<TRelease extends releasesSummary.Release>(
+  releaseKey: TRelease,
+) {
   return {
     /**
      * Retrieve the contract artifact for a given contract
@@ -63,7 +60,9 @@ export function release<TRelease extends Release>(releaseKey: TRelease) {
      * const incrementOracleArtifact = await release("v1.3.1").getContractArtifact("src/IncrementOracle.sol/IncrementOracle");
      * ```
      */
-    getContractArtifact<TContract extends Contract>(contractKey: TContract) {
+    getContractArtifact<TContract extends releasesSummary.Contract>(
+      contractKey: TContract,
+    ) {
       return getArtifact(contractKey, releaseKey);
     },
     /**

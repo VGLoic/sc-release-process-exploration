@@ -34,9 +34,7 @@ export class S3BucketProvider implements ReleaseStorageProvider {
       },
     });
 
-    this.releasePath = config.prefix
-      ? `${config.prefix}/releases/`
-      : "releases/";
+    this.releasePath = config.prefix ? `${config.prefix}/releases` : "releases";
     this.config = config;
     this.client = s3Client;
   }
@@ -63,10 +61,11 @@ export class S3BucketProvider implements ReleaseStorageProvider {
   }
 
   public async listReleases() {
+    const completedReleasePath = `${this.releasePath}/`;
     const listCommand = new ListObjectsCommand({
       Bucket: this.config.bucketName,
       Delimiter: "/",
-      Prefix: this.releasePath,
+      Prefix: completedReleasePath,
     });
     const listResult = await this.client.send(listCommand);
     const commonPrefixes = listResult.CommonPrefixes;
@@ -77,7 +76,7 @@ export class S3BucketProvider implements ReleaseStorageProvider {
     for (const prefix of commonPrefixes) {
       const raw = prefix.Prefix;
       if (!raw) continue;
-      const release = raw.replace(this.releasePath, "").replace("/", "");
+      const release = raw.replace(completedReleasePath, "").replace("/", "");
       releases.push(release);
     }
     return releases;

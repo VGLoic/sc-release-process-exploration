@@ -110,41 +110,9 @@ export async function pull(
     }
   }
 
-  async function pullRelease(releaseToPull: string) {
-    const releaseContentResult = await toAsyncResult(
-      releaseStorageProvider.pullRelease(releaseToPull),
-    );
-    if (!releaseContentResult.success) {
-      throw new ScriptError(
-        `Error pulling the release "${releaseToPull}" from the storage`,
-      );
-    }
-
-    const releaseDirectoryCreationResult = await toAsyncResult(
-      fs.mkdir(`releases/${releaseToPull}`, { recursive: true }),
-    );
-    if (!releaseDirectoryCreationResult.success) {
-      throw new ScriptError(
-        `Error creating the release directory for "${releaseToPull}"`,
-      );
-    }
-
-    const copyResult = await toAsyncResult(
-      fs.writeFile(
-        `releases/${releaseToPull}/build-info.json`,
-        releaseContentResult.value,
-      ),
-    );
-    if (!copyResult.success) {
-      throw new ScriptError(
-        `Error copying the "build-info.json" for release "${releaseToPull}"`,
-      );
-    }
-  }
-
   const pullResults = await Promise.allSettled(
     releasesToPull.map(async (releaseToPull) =>
-      pullRelease(releaseToPull)
+      pullRelease(releaseToPull, releaseStorageProvider)
         .then(() => {
           console.log(
             LOG_COLORS.success,
@@ -177,4 +145,40 @@ export async function pull(
     pulledReleases,
     failedReleases,
   };
+}
+
+async function pullRelease(
+  releaseToPull: string,
+  releaseStorageProvider: ReleaseStorageProvider,
+) {
+  const releaseContentResult = await toAsyncResult(
+    releaseStorageProvider.pullRelease(releaseToPull),
+  );
+  if (!releaseContentResult.success) {
+    console.error(releaseContentResult.error);
+    throw new ScriptError(
+      `Error pulling the release "${releaseToPull}" from the storage`,
+    );
+  }
+
+  const releaseDirectoryCreationResult = await toAsyncResult(
+    fs.mkdir(`releases/${releaseToPull}`, { recursive: true }),
+  );
+  if (!releaseDirectoryCreationResult.success) {
+    throw new ScriptError(
+      `Error creating the release directory for "${releaseToPull}"`,
+    );
+  }
+
+  const copyResult = await toAsyncResult(
+    fs.writeFile(
+      `releases/${releaseToPull}/build-info.json`,
+      releaseContentResult.value,
+    ),
+  );
+  if (!copyResult.success) {
+    throw new ScriptError(
+      `Error copying the "build-info.json" for release "${releaseToPull}"`,
+    );
+  }
 }

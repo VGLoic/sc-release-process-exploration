@@ -8,7 +8,7 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 jobs:
   format-and-lint:
     runs-on: ubuntu-latest
-    name: Format and lint check
+    name: Format, lint and type check
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -17,6 +17,7 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: yarn format:check
       - run: yarn lint
+      - run: yarn typecheck
   simulate-release:
     name: Simulate release
     runs-on: ubuntu-latest

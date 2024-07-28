@@ -13,16 +13,28 @@ dotenv.config();
 
 const program = new Command()
   .version("0.0.1")
-  .description("A simple CLI program");
+  .description(
+    "CLI for managing remote releases with its associated smart contract artifacts",
+  );
 
 program
   .command("pull")
-  .description("Pull the missing releases from the S3 bucket")
+  .description(
+    "Pull the missing releases from the release storage and generate associated typings",
+  )
   .option(
     "-r, --release <release>",
-    "A specific release to pull from the S3 bucket. If not provided, all missing releases will be pulled",
+    "A specific release to pull from the release storage. If not provided, all missing releases will be pulled",
   )
   .option("-f, --force", "Force the pull of the releases, replacing local ones")
+  .option(
+    "--no-typing-generation",
+    "Do not generate typings for the pulled releases",
+  )
+  .option(
+    "--no-filter",
+    "Do not filter similar contract in subsequent releases when generating typings",
+  )
   .action(async (opts) => {
     const envParsingResult = z
       .object({
@@ -53,6 +65,8 @@ program
       .object({
         release: z.string().optional(),
         force: z.boolean().default(false),
+        typingGeneration: z.boolean().default(true),
+        filter: z.boolean().default(true),
       })
       .safeParse(opts);
     if (!optsParsingResult.success) {
@@ -93,10 +107,7 @@ program
 
     if (pullResult.value.remoteReleases.length === 0) {
       console.log(LOG_COLORS.success, "\nNo releases to pull yet");
-      return;
-    }
-
-    if (
+    } else if (
       pullResult.value.failedReleases.length === 0 &&
       pullResult.value.pulledReleases.length === 0
     ) {
@@ -107,35 +118,54 @@ program
       pullResult.value.remoteReleases.forEach((release) => {
         console.log(LOG_COLORS.success, ` - ${release}`);
       });
-      return;
+    } else {
+      if (pullResult.value.pulledReleases.length > 0) {
+        console.log(
+          LOG_COLORS.success,
+          `\nPulled ${pullResult.value.pulledReleases.length} releases from storage:`,
+        );
+        pullResult.value.pulledReleases.forEach((release) => {
+          console.log(LOG_COLORS.success, ` - ${release}`);
+        });
+      }
+
+      if (pullResult.value.failedReleases.length > 0) {
+        console.log(
+          LOG_COLORS.error,
+          `\n❌ Failed to pull ${pullResult.value.failedReleases.length} releases:`,
+        );
+        pullResult.value.failedReleases.forEach((release) => {
+          console.log(LOG_COLORS.error, ` - ${release}`);
+        });
+        console.log("\n");
+      }
     }
 
-    if (pullResult.value.pulledReleases.length > 0) {
-      console.log(
-        LOG_COLORS.success,
-        `\nPulled ${pullResult.value.pulledReleases.length} releases from storage:`,
+    if (optsParsingResult.data.typingGeneration) {
+      await generateReleasesSummary(optsParsingResult.data.filter).catch(
+        (err) => {
+          if (err instanceof ScriptError) {
+            console.log(LOG_COLORS.error, "❌ ", err.message);
+            process.exitCode = 1;
+            return;
+          }
+          console.log(
+            LOG_COLORS.error,
+            "❌ An unexpected error occurred: ",
+            err,
+          );
+          process.exitCode = 1;
+        },
       );
-      pullResult.value.pulledReleases.forEach((release) => {
-        console.log(LOG_COLORS.success, ` - ${release}`);
-      });
-    }
 
-    if (pullResult.value.failedReleases.length > 0) {
-      console.log(
-        LOG_COLORS.error,
-        `\n❌ Failed to pull ${pullResult.value.failedReleases.length} releases:`,
-      );
-      pullResult.value.failedReleases.forEach((release) => {
-        console.log(LOG_COLORS.error, ` - ${release}`);
-      });
-      console.log("\n");
+      console.log(LOG_COLORS.success, "\nTypings generated successfully\n");
     }
   });
 
 program
   .command("push")
-  .argument("<release>", "The release to push to the S3 bucket")
-  .description("Push a release to the S3 bucket")
+  .argument("<release>", "The release to push to the release storage")
+  .description("Push a release to the release storage")
   .option(
     "-f, --force",
     "Force the push of the release even if it already exists in the bucket",
@@ -238,6 +268,14 @@ program
       return;
     }
 
+    if (Object.keys(releasesSummaryResult.value.releases).length === 0) {
+      console.log(
+        LOG_COLORS.warn,
+        "No releases found locally. Have you forgotten to pull?",
+      );
+      return;
+    }
+
     console.log(LOG_COLORS.log, "Available releases:");
     for (const release of Object.keys(releasesSummaryResult.value.releases)) {
       const contracts = releasesSummaryResult.value.releases[release];
@@ -333,7 +371,7 @@ program
       process.exitCode = 1;
     });
 
-    console.log(LOG_COLORS.success, "Typings generated successfully\n");
+    console.log(LOG_COLORS.success, "\nTypings generated successfully\n");
   });
 
 program.parse(process.argv);
