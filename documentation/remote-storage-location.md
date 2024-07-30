@@ -62,7 +62,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: eu-west-3
-        run: yarn cli push latest
+        run: yarn cli push latest -f
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
