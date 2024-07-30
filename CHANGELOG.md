@@ -1,5 +1,11 @@
 # sc-release-process-exploration
 
+## 1.4.9
+
+### Patch Changes
+
+- 01f72c9: Change multiplier to 4
+
 ## 1.4.8
 
 ### Patch Changes
