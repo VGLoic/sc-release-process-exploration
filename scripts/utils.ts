@@ -1,6 +1,8 @@
 import { BuildInfo, HardhatRuntimeEnvironment } from "hardhat/types";
-import { ArtifactData, DeployOptions } from "hardhat-deploy/dist/types";
+import { DeployOptions } from "hardhat-deploy/dist/types";
 import { Etherscan } from "@nomicfoundation/hardhat-verify/etherscan";
+import { z } from "zod";
+import { setTimeout } from "timers/promises";
 
 /**
  * Retrieve an existing deployment or deploy a new one
@@ -40,83 +42,31 @@ export async function retrieveOrDeploy(
 }
 
 /**
- * Sleep for a given amount of time
- * @param ms Milliseconds to sleep
- */
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-export function semverStringToSemver(s: string) {
-  if (!/^v\d+\.\d+\.\d+$/.test(s)) {
-    throw new Error("Invalid semver string");
-  }
-  const versions = s
-    .slice(1)
-    .split(".")
-    .map((n) => parseInt(n));
-  if (versions.some((n) => isNaN(n))) {
-    throw new Error("Invalid semver string");
-  }
-
-  return { major: versions[0], minor: versions[1], patch: versions[2] };
-}
-
-export function findLastRelease(releases: string[]) {
-  if (releases.some((r) => !/^v\d+\.\d+\.\d+$/.test(r))) {
-    throw new Error("Invalid release names");
-  }
-  let lastRelease = {
-    name: releases[0],
-    semver: semverStringToSemver(releases[0]),
-  };
-  for (let i = 1; i < releases.length; i++) {
-    const release = releases[i];
-    const semver = semverStringToSemver(release);
-    if (semver.major > lastRelease.semver.major) {
-      lastRelease = {
-        name: release,
-        semver,
-      };
-    }
-    if (semver.major === lastRelease.semver.major) {
-      if (semver.minor > lastRelease.semver.minor) {
-        lastRelease = {
-          name: release,
-          semver,
-        };
-      }
-      if (semver.minor === lastRelease.semver.minor) {
-        if (semver.patch > lastRelease.semver.patch) {
-          lastRelease = {
-            name: release,
-            semver,
-          };
-        }
-      }
-    }
-  }
-  return lastRelease;
-}
-
-type Result<T> =
-  | {
-      ok: true;
-      data: T;
-    }
-  | {
-      ok: false;
-      error: Error;
-    };
-/**
  * Converts a promise to a promise of a result.
  * @param promise Promise to convert
  * @returns The result of the promise
  */
-export function toResult<T>(promise: Promise<T>): Promise<Result<T>> {
-  return promise
-    .then((data) => ({ ok: true as const, data }))
-    .catch((error) => ({ ok: false as const, error }));
+export function toResult<T>(fn: () => T):
+  | {
+      success: true;
+      data: T;
+    }
+  | {
+      success: false;
+      error: unknown;
+    } {
+  try {
+    const result = fn();
+    return {
+      success: true,
+      data: result,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err,
+    };
+  }
 }
 
 type VerifyPayload = {
@@ -179,9 +129,10 @@ export async function verifyContract(payload: VerifyPayload) {
       await verifyContractOnce(payload);
       return;
     } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const message = (err as any).message as string;
       if (message && message.includes("does not have bytecode")) {
-        await sleep(2_000);
+        await setTimeout(2_000);
         continue;
       }
 
@@ -214,44 +165,38 @@ async function verifyContractOnce(payload: VerifyPayload) {
     return;
   }
 
-  try {
-    const { message: guid } = await etherscan.verify(
-      // Contract address
-      payload.address,
-      // Inputs
-      JSON.stringify(payload.sourceCode),
-      // Contract full name
-      `${payload.sourceName}:${payload.contractName}`,
-      // Compiler version
-      `v${payload.compilerVersion}`,
-      // Encoded constructor arguments
-      payload.encodedConstructorArgs ?? "",
+  const { message: guid } = await etherscan.verify(
+    // Contract address
+    payload.address,
+    // Inputs
+    JSON.stringify(payload.sourceCode),
+    // Contract full name
+    `${payload.sourceName}:${payload.contractName}`,
+    // Compiler version
+    `v${payload.compilerVersion}`,
+    // Encoded constructor arguments
+    payload.encodedConstructorArgs ?? "",
+  );
+
+  await setTimeout(2_000);
+
+  const verificationStatus = await etherscan.getVerificationStatus(guid);
+
+  if (verificationStatus.isSuccess()) {
+    console.log(
+      `Successfully verified contract ${payload.sourceName}:${payload.contractName}`,
     );
-
-    await sleep(2_000);
-
-    const verificationStatus = await etherscan.getVerificationStatus(guid);
-
-    if (verificationStatus.isSuccess()) {
-      console.log(
-        `Successfully verified contract ${payload.sourceName}:${payload.contractName}`,
-      );
-    } else {
-      throw new Error(verificationStatus.message);
-    }
-  } catch (err) {
-    throw err;
+  } else {
+    throw new Error(verificationStatus.message);
   }
 }
 
-import { z } from "zod";
-
 export function toAsyncResult<T, TError = Error>(
   promise: Promise<T>,
-): Promise<{ ok: true; value: T } | { ok: false; error: TError }> {
+): Promise<{ success: true; value: T } | { success: false; error: TError }> {
   return promise
-    .then((value) => ({ ok: true as const, value }))
-    .catch((error) => ({ ok: false as const, error }));
+    .then((value) => ({ success: true as const, value }))
+    .catch((error) => ({ success: false as const, error }));
 }
 
 const literalSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);

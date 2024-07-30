@@ -12,26 +12,18 @@ jobs:
     name: Upload release artifacts
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20.10
+          node-version-file: .nvmrc
       - name: Install dependencies
         run: yarn
       - name: Create artifacts
         run: yarn compile
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-3
-      - name: Upload release artifacts
+      - name: Push release to S3
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
-          BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
-        run: |
-          build_info_filename=$(ls -AU artifacts/build-info | head -1)
-          aws s3 cp artifacts/build-info/$build_info_filename s3://$BUCKET_NAME/releases/$RELEASE_TAG/build-info.json
+          AWS_S3_BUCKET: ${{ secrets.S3_BUCKET_NAME }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: eu-west-3
+        run: yarn cli push ${{ github.ref_name }}

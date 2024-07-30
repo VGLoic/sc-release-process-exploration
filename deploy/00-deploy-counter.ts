@@ -4,7 +4,7 @@ import { contract, getReleaseBuildInfo } from "../scripts/artifacts";
 import { verifyContract } from "../scripts/utils";
 import { ethers } from "ethers";
 
-const TARGET_RELEASE = "v1.3.1";
+const TARGET_RELEASE = "v1.4.5";
 
 const deployCounter: DeployFunction = async function (
   hre: HardhatRuntimeEnvironment,
@@ -53,7 +53,7 @@ const deployCounter: DeployFunction = async function (
   }
 
   const counterArtifact = await contract("src/Counter.sol:Counter").getArtifact(
-    "v1.3.1",
+    TARGET_RELEASE,
   );
   const counterDeployment = await hre.deployments.deploy(
     `Counter@${TARGET_RELEASE}`,

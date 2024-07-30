@@ -84,6 +84,9 @@ We will find the same GitHub workdlows than before, but slightly modified:
 - on `push` on `tags`: the `<tag>` release is created locally and then copied to the remote storage,
 - on `pull request`: nothing is updated but we download the `latest` release and we generate a diff with the current state of the `latest` release.
 
+In order to interact easily with the release storage, a dedicated CLI has been made
+![cli screenshot](/images/cli-img.png)
+
 > [!NOTE]
 > We are using [Changesets](https://github.com/changesets/changesets) in order to manage release of the NPM package.
 > Because of this, we don't rely on the `push on tags` workflow as this part is automated by Changesets.
@@ -96,3 +99,16 @@ Additional details can be found in the [related documentation](documentation/rem
 ## Version/Release manager
 
 [Changesets](https://github.com/changesets/changesets) is used in order to manage versions here but any other tools can be freely chosen.
+
+1. release
+   - compile without cache in the target folder,
+   - if storage setup,
+     - upload to storage
+2. pull
+   - pull from storage and put in someplace hidden,
+3. prepare
+   - considering what is in the hidden place, derive
+     - mapping for release version -> contracts
+     - mapping for contract -> release versions
+4. list
+   - list all releases

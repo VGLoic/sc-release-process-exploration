@@ -41,7 +41,7 @@ async function buildDeploymentsSummary() {
   const deployments = await toAsyncResult(
     fs.readdir("deployments", { withFileTypes: true }),
   );
-  if (!deployments.ok) {
+  if (!deployments.success) {
     process.exitCode = 1;
     console.error("Error reading the `deployments` folder");
     return;
@@ -64,7 +64,7 @@ async function buildDeploymentsSummary() {
     const chainIdResult = await toAsyncResult(
       fs.readFile(`deployments/${deploymentDirectory}/.chainId`, "utf-8"),
     );
-    if (!chainIdResult.ok) {
+    if (!chainIdResult.success) {
       console.warn(
         `Error reading .chainId file for deployment ${deploymentDirectory}. Skipping`,
       );
@@ -82,7 +82,7 @@ async function buildDeploymentsSummary() {
     const deploymentFiles = await toAsyncResult(
       fs.readdir(`deployments/${deploymentDirectory}`, { withFileTypes: true }),
     );
-    if (!deploymentFiles.ok) {
+    if (!deploymentFiles.success) {
       console.warn(
         `Error reading deployment directory ${deploymentDirectory}. Skipping`,
       );
@@ -101,7 +101,7 @@ async function buildDeploymentsSummary() {
           "utf-8",
         ),
       );
-      if (!deploymentContentResult.ok) {
+      if (!deploymentContentResult.success) {
         console.warn(
           `Error reading deployment file ${deploymentFile}. Skipping`,
         );

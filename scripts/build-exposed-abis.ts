@@ -73,7 +73,7 @@ async function buildExposedAbis() {
     const removeAbisTmpResult = await toAsyncResult(
       fs.rm(ABIS_TMP_FOLDER, { recursive: true }),
     );
-    if (!removeAbisTmpResult.ok) {
+    if (!removeAbisTmpResult.success) {
       // Exit if there was an error removing the `abis-tmp` folder
       console.error(
         `❌ There was an error removing the \`${ABIS_TMP_FOLDER}\` folder. Please remove it manually. Build cancelled.`,
@@ -85,7 +85,7 @@ async function buildExposedAbis() {
   }
   // Create the `abis-tmp` folder
   const createAbisTmpResult = await toAsyncResult(fs.mkdir(ABIS_TMP_FOLDER));
-  if (!createAbisTmpResult.ok) {
+  if (!createAbisTmpResult.success) {
     // Exit if there was an error creating the `abis` folder
     console.error(
       `❌ There was an error creating the new \`${ABIS_TMP_FOLDER}\` folder. Build cancelled. Please check the error and retry.`,
@@ -97,7 +97,7 @@ async function buildExposedAbis() {
 
   // Fill the new `abis-tmp` folder
   const fillAbisTmpFolderResult = await toAsyncResult(fillAbisTmpFolder());
-  if (!fillAbisTmpFolderResult.ok) {
+  if (!fillAbisTmpFolderResult.success) {
     await fs.rm(ABIS_TMP_FOLDER, { recursive: true }).catch((e) => {
       console.warn(
         `⚠️ There was an error removing the \`${ABIS_TMP_FOLDER}\` folder. Please remove it manually.`,
@@ -122,7 +122,7 @@ async function buildExposedAbis() {
       const removeAbisOldResult = await toAsyncResult(
         fs.rm(ABIS_OLD_FOLDER, { recursive: true }),
       );
-      if (!removeAbisOldResult.ok) {
+      if (!removeAbisOldResult.success) {
         // Exit if there was an error removing the `abis-old` folder
         console.error(
           `❌ There was an error removing the \`${ABIS_OLD_FOLDER}\` folder. Please remove it manually. Build cancelled.`,
@@ -135,7 +135,7 @@ async function buildExposedAbis() {
     const renameResult = await toAsyncResult(
       fs.rename(ABIS_FOLDER, ABIS_OLD_FOLDER),
     );
-    if (!renameResult.ok) {
+    if (!renameResult.success) {
       // Exit if there was an error renaming the `abis` folder
       console.error(
         `❌ There was an error renaming the \`${ABIS_FOLDER}\` folder. Build cancelled. Please check the error and retry.`,
@@ -222,7 +222,7 @@ async function fillAbisTmpFolder() {
   const releasesEntriesResult = await toAsyncResult(
     fs.readdir(RELEASES_FOLDER, { withFileTypes: true }),
   );
-  if (!releasesEntriesResult.ok) {
+  if (!releasesEntriesResult.success) {
     throw new Error("Error reading the `releases` folder");
   }
   const releasesDirectories = releasesEntriesResult.value
@@ -232,7 +232,7 @@ async function fillAbisTmpFolder() {
 
   for (const release of releasesDirectories) {
     const buildInfoResult = await toAsyncResult(getReleaseBuildInfo(release));
-    if (!buildInfoResult.ok) {
+    if (!buildInfoResult.success) {
       throw buildInfoResult.error;
     }
 

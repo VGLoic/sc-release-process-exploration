@@ -25,9 +25,17 @@ Deployments will be stored in the `deployments` folder which is commited on the 
 
 A NPM package is created in order to share the ABIs and the deployments.
 
+## CLI
+
+In order to interact easily with the release storage, a dedicated CLI has been made
+![cli screenshot](/images/cli-img.png)
+
 ## Workflows
 
 The `main.yml` workflow file contains the heart of the artifacts release process
+
+> [!NOTE]
+> While the workflows uses the internal CLI, it is straightforward to do without it.
 
 ```yaml
 jobs:
@@ -48,19 +56,13 @@ jobs:
         run: yarn
       - name: Create artifacts
         run: yarn compile
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-3
-      - name: Upload latest release artifacts
+      - name: Push latest release to S3
         env:
-          RELEASE_TAG: latest
-          BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
-        run: |
-          build_info_filename=$(ls -AU artifacts/build-info | head -1)
-          aws s3 cp artifacts/build-info/$build_info_filename s3://$BUCKET_NAME/releases/$RELEASE_TAG/build-info.json
+          AWS_S3_BUCKET: ${{ secrets.S3_BUCKET_NAME }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: eu-west-3
+        run: yarn cli push latest
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
@@ -74,9 +76,12 @@ jobs:
           # 4. Publish the NPM package
           publish: yarn release
         env:
-          BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          AWS_S3_BUCKET: ${{ secrets.S3_BUCKET_NAME }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: eu-west-3
 ```
 
 The `tags.yaml` worfklow will handle all the other releases and will be quite similar in terms of jobs.
@@ -94,17 +99,12 @@ As we can't rely on the usual integration of Hardhat or `hardhat-deploy`, helper
 As the releases artifacts are stored remotely, one would need to download them locally before trying to deploy. With the option of AWS S3, it would look like
 
 ```console
-aws s3 cp s3://<MY BUCKET NAME>/releases/ releases/ --recursive
+yarn cli pull
 ```
 
-The helper scripts are based on a "releases summary" that needs to be generated beforehand, i.e.
+The pull will automatically generate the typings to be used later on.
 
-```console
-# Generate `releases/generated/summary.ts` file for TypeScript support
-yarn generate-releases-summary
-```
-
-Once the summary, one can use the helpers defined in `scripts/artifacts.ts`. As an example, here is the script for deploying the current contracts for release `v1.3.1` using `hardhat-deploy`
+One can then use the helpers defined in `scripts/artifacts.ts`. As an example, here is the script for deploying the current contracts for release `v1.3.1` using `hardhat-deploy`
 
 ```ts
 // deploy/00-deploy-counter.ts

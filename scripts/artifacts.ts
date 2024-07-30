@@ -3,14 +3,8 @@ import fs from "fs/promises";
 import * as releasesSummary from "../releases/generated/summary";
 import { ZBuildInfo, toAsyncResult } from "./utils";
 
-export type Contract = keyof typeof releasesSummary.CONTRACTS;
-export type Release = keyof typeof releasesSummary.RELEASES;
-
-export type AvailableReleaseForContract<TContract extends Contract> =
-  (typeof releasesSummary.CONTRACTS)[TContract][number];
-
-export type AvailableContractForRelease<TRelease extends Release> =
-  (typeof releasesSummary.RELEASES)[TRelease][number];
+// eslint-disable-next-line @typescript-eslint/ban-types
+type FallbackString = string & {};
 
 /**
  * Utility functions for a given contract
@@ -22,7 +16,9 @@ export type AvailableContractForRelease<TRelease extends Release> =
  * const counterArtifact = await counterUtils.getArtifact("v1.3.1");
  * ```
  */
-export function contract<TContract extends Contract>(contractKey: TContract) {
+export function contract<
+  TContract extends releasesSummary.Contract | FallbackString,
+>(contractKey: TContract) {
   return {
     /**
      * Retrieve the contract artifact for a given release
@@ -32,14 +28,30 @@ export function contract<TContract extends Contract>(contractKey: TContract) {
      * const counterArtifact = await contract("src/Counter.sol/Counter").getArtifact("v1.3.1");
      * ```
      */
-    getArtifact(release: AvailableReleaseForContract<TContract>) {
+    getArtifact(
+      release: releasesSummary.Contract extends never
+        ? string
+        : TContract extends releasesSummary.Contract
+        ? releasesSummary.AvailableReleaseForContract<TContract>
+        : never,
+    ) {
       return getArtifact(contractKey, release);
     },
     /**
      * Get the available releases for the contract
      * @returns The available releases for the contract
      */
-    getAvailableReleases: () => releasesSummary.CONTRACTS[contractKey],
+    getAvailableReleases: (): TContract extends releasesSummary.Contract
+      ? (typeof releasesSummary.CONTRACTS)[TContract]
+      : string[] => {
+      if (contractKey in releasesSummary.CONTRACTS) {
+        return releasesSummary.CONTRACTS[
+          contractKey as releasesSummary.Contract
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ] as any;
+      }
+      throw new Error(`Contract not found for contract key: ${contractKey}`);
+    },
   };
 }
 
@@ -53,7 +65,9 @@ export function contract<TContract extends Contract>(contractKey: TContract) {
  * const incrementOracleArtifact = await v1_3_1Utils.getContractArtifact("src/IncrementOracle.sol/IncrementOracle");
  * ```
  */
-export function release<TRelease extends Release>(releaseKey: TRelease) {
+export function release<
+  TRelease extends releasesSummary.Release | FallbackString,
+>(releaseKey: TRelease) {
   return {
     /**
      * Retrieve the contract artifact for a given contract
@@ -63,20 +77,37 @@ export function release<TRelease extends Release>(releaseKey: TRelease) {
      * const incrementOracleArtifact = await release("v1.3.1").getContractArtifact("src/IncrementOracle.sol/IncrementOracle");
      * ```
      */
-    getContractArtifact<TContract extends Contract>(contractKey: TContract) {
+    getContractArtifact(
+      contractKey: TRelease extends releasesSummary.Release
+        ? releasesSummary.AvailableContractForRelease<TRelease>
+        : string,
+    ) {
       return getArtifact(contractKey, releaseKey);
     },
     /**
      * Get the available contracts for the release
      * @returns The available contracts for the release
      */
-    getAvailableContracts: () => releasesSummary.RELEASES[releaseKey],
+    getAvailableContracts: (): TRelease extends releasesSummary.Release
+      ? (typeof releasesSummary.RELEASES)[TRelease]
+      : string[] => {
+      if (releaseKey in releasesSummary.RELEASES) {
+        return releasesSummary.RELEASES[
+          releaseKey as releasesSummary.Release
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ] as any;
+      }
+      throw new Error(`Release not found for release: ${releaseKey}`);
+    },
   };
 }
 
 async function getArtifact(contractKey: string, release: string) {
-  const buildInfoResult = await toAsyncResult(getReleaseBuildInfo(release));
-  if (!buildInfoResult.ok) {
+  const buildInfoResult = await toAsyncResult(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getReleaseBuildInfo(release as any),
+  );
+  if (!buildInfoResult.success) {
     throw buildInfoResult.error;
   }
 
@@ -104,7 +135,11 @@ async function getArtifact(contractKey: string, release: string) {
   return contractArtifact;
 }
 
-export async function getReleaseBuildInfo(release: string) {
+export async function getReleaseBuildInfo(
+  release: releasesSummary.Release extends never
+    ? string
+    : releasesSummary.Release,
+) {
   const buildInfoExists = await fs
     .stat(`releases/${release}/build-info.json`)
     .catch(() => false);
@@ -118,7 +153,7 @@ export async function getReleaseBuildInfo(release: string) {
       .readFile(`releases/${release}/build-info.json`, "utf-8")
       .then(JSON.parse),
   );
-  if (!buildInfoContentResult.ok) {
+  if (!buildInfoContentResult.success) {
     console.error(buildInfoContentResult.error);
     throw buildInfoContentResult.error;
   }
