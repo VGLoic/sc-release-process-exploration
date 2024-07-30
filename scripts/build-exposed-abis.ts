@@ -231,7 +231,10 @@ async function fillAbisTmpFolder() {
     .filter((name) => name !== "generated");
 
   for (const release of releasesDirectories) {
-    const buildInfoResult = await toAsyncResult(getReleaseBuildInfo(release));
+    const buildInfoResult = await toAsyncResult(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      getReleaseBuildInfo(release as any),
+    );
     if (!buildInfoResult.success) {
       throw buildInfoResult.error;
     }

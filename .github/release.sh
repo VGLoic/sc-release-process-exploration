@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 RELEASE_TAG_WITHOUT_PREFIX=$(cat package.json | jq -r '.version')
 
