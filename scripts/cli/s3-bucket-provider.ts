@@ -1,6 +1,7 @@
 import {
   GetObjectCommand,
   ListObjectsCommand,
+  NoSuchKey,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -44,7 +45,11 @@ export class S3BucketProvider implements ReleaseStorageProvider {
       Bucket: this.config.bucketName,
       Key: `${this.releasePath}/${release}/build-info.json`,
     });
-    const headResult = await this.client.send(headCommand);
+    const headResult = await this.client.send(headCommand).catch((err) => {
+      if (err instanceof NoSuchKey) {
+        return null;
+      }
+    });
     return Boolean(headResult);
   }
 
