@@ -21,9 +21,10 @@ export const RELEASES = {} as const;
 ${HELPER_TYPES_CONTENT}
 `;
 
-async function writeEmptySummaries() {
+async function writeEmptySummaries(opts: { debug?: boolean } = {}) {
   const writeEmptyTsSummaryResult = await toAsyncResult(
     fs.writeFile("releases/generated/summary.ts", EMPTY_RELEASES_FILE_CONTENT),
+    { debug: opts.debug },
   );
   if (!writeEmptyTsSummaryResult.success) {
     throw new ScriptError(
@@ -42,6 +43,7 @@ async function writeEmptySummaries() {
         4,
       ),
     ),
+    { debug: opts.debug },
   );
   if (!writeEmptyJsonResult.success) {
     throw new ScriptError(
@@ -74,7 +76,10 @@ async function writeEmptySummaries() {
  * } as const;
  * ```
  */
-export async function generateReleasesSummary(filterSimilarContracts: boolean) {
+export async function generateReleasesSummary(
+  filterSimilarContracts: boolean,
+  opts: { debug?: boolean } = {},
+) {
   // Check if the `releases` folder exists
   const doesReleasesFolderExist = await fs.stat("releases").catch(() => false);
   if (!doesReleasesFolderExist) {
@@ -84,6 +89,7 @@ export async function generateReleasesSummary(filterSimilarContracts: boolean) {
     );
     const dirCreationResult = await toAsyncResult(
       fs.mkdir("releases/generated", { recursive: true }),
+      { debug: opts.debug },
     );
     if (!dirCreationResult.success) {
       throw new ScriptError('Error creating the local "releases" folder');
@@ -93,6 +99,7 @@ export async function generateReleasesSummary(filterSimilarContracts: boolean) {
   // Get the list of releases as directories in the `releases` folder
   const releasesEntriesResult = await toAsyncResult(
     fs.readdir("releases", { withFileTypes: true }),
+    { debug: opts.debug },
   );
   if (!releasesEntriesResult.success) {
     throw new ScriptError('Error reading the "releases" folder');
@@ -112,11 +119,11 @@ export async function generateReleasesSummary(filterSimilarContracts: boolean) {
       LOG_COLORS.warn,
       "\nNo local releases have been found. Generating an empty summary.",
     );
-    await writeEmptySummaries();
+    await writeEmptySummaries(opts);
     return;
   }
 
-  for await (const release of releaseArtifacts(releaseNames)) {
+  for await (const release of releaseArtifacts(releaseNames, opts)) {
     for (const contractPath in release.buildInfo.output.contracts) {
       const contracts = release.buildInfo.output.contracts[contractPath];
       for (const contractName in contracts) {
@@ -225,6 +232,7 @@ export async function generateReleasesSummary(filterSimilarContracts: boolean) {
   // Write the `releases-summary.ts` file
   const writeTsResult = await toAsyncResult(
     fs.writeFile("releases/generated/summary.ts", releasesSummary),
+    { debug: opts.debug },
   );
   if (!writeTsResult.success) {
     throw new ScriptError(
@@ -244,6 +252,7 @@ export async function generateReleasesSummary(filterSimilarContracts: boolean) {
         4,
       ),
     ),
+    { debug: opts.debug },
   );
   if (!writeJsonResult.success) {
     throw new ScriptError(
@@ -252,14 +261,17 @@ export async function generateReleasesSummary(filterSimilarContracts: boolean) {
   }
 }
 
-async function* releaseArtifacts(releases: string[]) {
+async function* releaseArtifacts(
+  releases: string[],
+  opts: { debug?: boolean } = {},
+) {
   for (const release of releases) {
-    const releaseBuildInfo = await getReleaseBuildInfo(release);
+    const releaseBuildInfo = await getReleaseBuildInfo(release, opts);
     yield { buildInfo: releaseBuildInfo, name: release };
   }
 }
 
-async function getReleaseBuildInfo(release: string) {
+async function getReleaseBuildInfo(release: string, opts: { debug?: boolean }) {
   const buildInfoExists = await fs
     .stat(`releases/${release}/build-info.json`)
     .catch(() => false);
@@ -272,6 +284,7 @@ async function getReleaseBuildInfo(release: string) {
     fs
       .readFile(`releases/${release}/build-info.json`, "utf-8")
       .then(JSON.parse),
+    { debug: opts.debug },
   );
   if (!buildInfoContentResult.success) {
     console.error(buildInfoContentResult.error);

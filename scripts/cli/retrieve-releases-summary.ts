@@ -3,7 +3,7 @@ import { toAsyncResult } from "../utils";
 import { z } from "zod";
 import { ScriptError } from "./utils";
 
-export async function retrieveReleasesSummary() {
+export async function retrieveReleasesSummary(opts: { debug?: boolean } = {}) {
   const releasesExist = await fs.stat("releases").catch(() => false);
   if (!releasesExist) {
     throw new ScriptError(
@@ -31,6 +31,7 @@ export async function retrieveReleasesSummary() {
           })
           .parse(data);
       }),
+    { debug: opts.debug },
   );
 
   if (!releasesSummaryResult.success) {

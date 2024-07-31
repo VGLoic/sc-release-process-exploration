@@ -6,10 +6,13 @@ export async function pushRelease(
   release: string,
   opts: {
     force: boolean;
+    debug: boolean;
   },
   releaseStorageProvider: ReleaseStorageProvider,
 ) {
-  const freshBuildInfoResult = await toAsyncResult(retrieveFreshBuildInfo());
+  const freshBuildInfoResult = await toAsyncResult(retrieveFreshBuildInfo(), {
+    debug: opts.debug,
+  });
   if (!freshBuildInfoResult.success) {
     throw new ScriptError(
       `❌ Error retrieving the build info for the compilation. Please, make sure to have a unique build info file in the "artifacts/build-info" folder.`,
@@ -18,6 +21,7 @@ export async function pushRelease(
 
   const hasReleaseResult = await toAsyncResult(
     releaseStorageProvider.hasRelease(release),
+    { debug: opts.debug },
   );
   if (!hasReleaseResult.success) {
     throw new ScriptError(
@@ -43,6 +47,7 @@ export async function pushRelease(
       release,
       freshBuildInfoResult.value.content,
     ),
+    { debug: opts.debug },
   );
 
   if (!pushResult.success) {

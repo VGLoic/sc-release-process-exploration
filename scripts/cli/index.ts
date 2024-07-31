@@ -13,6 +13,7 @@ dotenv.config();
 
 const program = new Command()
   .version("0.0.1")
+  .option("-d, --debug", "output extra debugging")
   .description(
     "CLI for managing remote releases with its associated smart contract artifacts",
   );
@@ -67,6 +68,7 @@ program
         force: z.boolean().default(false),
         typingGeneration: z.boolean().default(true),
         filter: z.boolean().default(true),
+        debug: z.boolean().default(false),
       })
       .safeParse(opts);
     if (!optsParsingResult.success) {
@@ -89,6 +91,7 @@ program
 
     const pullResult = await toAsyncResult(
       pull(optsParsingResult.data, releaseStorageProvider),
+      { debug: optsParsingResult.data.debug },
     );
     if (!pullResult.success) {
       if (pullResult.error instanceof ScriptError) {
@@ -142,21 +145,17 @@ program
     }
 
     if (optsParsingResult.data.typingGeneration) {
-      await generateReleasesSummary(optsParsingResult.data.filter).catch(
-        (err) => {
-          if (err instanceof ScriptError) {
-            console.log(LOG_COLORS.error, "❌ ", err.message);
-            process.exitCode = 1;
-            return;
-          }
-          console.log(
-            LOG_COLORS.error,
-            "❌ An unexpected error occurred: ",
-            err,
-          );
+      await generateReleasesSummary(optsParsingResult.data.filter, {
+        debug: optsParsingResult.data.debug,
+      }).catch((err) => {
+        if (err instanceof ScriptError) {
+          console.log(LOG_COLORS.error, "❌ ", err.message);
           process.exitCode = 1;
-        },
-      );
+          return;
+        }
+        console.log(LOG_COLORS.error, "❌ An unexpected error occurred: ", err);
+        process.exitCode = 1;
+      });
 
       console.log(LOG_COLORS.success, "\nTypings generated successfully\n");
     }
@@ -205,6 +204,7 @@ program
     const optsParsingResult = z
       .object({
         force: z.boolean().default(false),
+        debug: z.boolean().default(false),
       })
       .safeParse(args);
     if (!optsParsingResult.success) {
@@ -244,9 +244,20 @@ program
 program
   .command("describe")
   .description("Describe releases and their contents")
-  .action(async () => {
+  .action(async (opts) => {
+    const optsParsingResult = z
+      .object({
+        debug: z.boolean().default(false),
+      })
+      .safeParse(opts);
+    if (!optsParsingResult.success) {
+      console.log(LOG_COLORS.error, "❌ Invalid arguments");
+      process.exitCode = 1;
+      return;
+    }
     const releasesSummaryResult = await toAsyncResult(
-      retrieveReleasesSummary(),
+      retrieveReleasesSummary({ debug: optsParsingResult.data.debug }),
+      { debug: optsParsingResult.data.debug },
     );
     if (!releasesSummaryResult.success) {
       if (releasesSummaryResult.error instanceof ScriptError) {
@@ -294,13 +305,26 @@ program
 program
   .command("diff-with-latest")
   .description("Compare the current compilation with the latest release")
-  .action(async () => {
+  .action(async (opts) => {
+    const optsParsingResult = z
+      .object({
+        debug: z.boolean().default(false),
+      })
+      .safeParse(opts);
+    if (!optsParsingResult.success) {
+      console.log(LOG_COLORS.error, "❌ Invalid arguments");
+      process.exitCode = 1;
+      return;
+    }
+
     console.log(
       LOG_COLORS.log,
       "\nComparing the current compilation with the latest release",
     );
 
-    const differencesResult = await toAsyncResult(generateDiffWithLatest());
+    const differencesResult = await toAsyncResult(
+      generateDiffWithLatest({ debug: optsParsingResult.data.debug }),
+    );
     if (!differencesResult.success) {
       if (differencesResult.error instanceof ScriptError) {
         console.log(LOG_COLORS.error, "❌ ", differencesResult.error.message);
@@ -341,6 +365,7 @@ program
     const parsingResult = z
       .object({
         filter: z.boolean(),
+        debug: z.boolean().default(false),
       })
       .safeParse(args);
 
@@ -361,7 +386,9 @@ program
 
     console.log("\n");
 
-    await generateReleasesSummary(parsingResult.data.filter).catch((err) => {
+    await generateReleasesSummary(parsingResult.data.filter, {
+      debug: parsingResult.data.debug,
+    }).catch((err) => {
       if (err instanceof ScriptError) {
         console.log(LOG_COLORS.error, "❌ ", err.message);
         process.exitCode = 1;

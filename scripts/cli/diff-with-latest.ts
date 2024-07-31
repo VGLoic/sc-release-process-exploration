@@ -73,7 +73,9 @@ type Difference = {
   name: string;
   status: "added" | "removed" | "changed";
 };
-export async function generateDiffWithLatest(): Promise<Difference[]> {
+export async function generateDiffWithLatest(
+  opts: { debug?: boolean } = {},
+): Promise<Difference[]> {
   const freshBuildInfoResult = await toAsyncResult(retrieveFreshBuildInfo());
   if (!freshBuildInfoResult.success) {
     throw new ScriptError(
@@ -83,6 +85,7 @@ export async function generateDiffWithLatest(): Promise<Difference[]> {
 
   const virtualReleaseContractHashesResult = await toAsyncResult(
     generateContractHashes(freshBuildInfoResult.value.content),
+    { debug: opts.debug },
   );
 
   if (!virtualReleaseContractHashesResult.success) {
@@ -114,6 +117,7 @@ export async function generateDiffWithLatest(): Promise<Difference[]> {
 
   const latestReleaseBuildInfoContentResult = await toAsyncResult(
     fs.readFile(LATEST_RELEASE_PATH, "utf-8"),
+    { debug: opts.debug },
   );
   if (!latestReleaseBuildInfoContentResult.success) {
     throw new Error(
@@ -123,6 +127,7 @@ export async function generateDiffWithLatest(): Promise<Difference[]> {
 
   const latestReleaseContractHashesResult = await toAsyncResult(
     generateContractHashes(latestReleaseBuildInfoContentResult.value),
+    { debug: opts.debug },
   );
   if (!latestReleaseContractHashesResult.success) {
     throw new Error(
