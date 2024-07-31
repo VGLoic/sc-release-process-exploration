@@ -49,6 +49,7 @@ export class S3BucketProvider implements ReleaseStorageProvider {
       if (err instanceof NoSuchKey) {
         return null;
       }
+      throw err;
     });
     return Boolean(headResult);
   }
