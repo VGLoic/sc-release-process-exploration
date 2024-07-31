@@ -7,18 +7,17 @@ import { ReleaseStorageProvider } from "./s3-bucket-provider";
  * Pulls releases from an S3 bucket
  * @param opts.force Whether to force the pull
  * @param opts.release A specific release to pull
- * @param awsConfig.bucketName The name of the bucket
- * @param awsConfig.bucketRegion The region of the bucket
- * @param awsConfig.accessKeyId The AWS access key ID
- * @param awsConfig.secretAccessKey The AWS secret access key
+ * @param opts.debug Whether to enable debug mode
+ * @param releaseStorageProvider The release storage provider
  * @returns An object with the remote releases, pulled releases, and failed releases
  */
 export async function pull(
-  opts: { force: boolean; release?: string },
+  opts: { force: boolean; release?: string; debug: boolean },
   releaseStorageProvider: ReleaseStorageProvider,
 ) {
   const remoteReleasesResult = await toAsyncResult(
     releaseStorageProvider.listReleases(),
+    { debug: opts.debug },
   );
   if (!remoteReleasesResult.success) {
     throw new ScriptError("Error listing the releases in the storage");
@@ -45,6 +44,7 @@ export async function pull(
     // Get the list of releases as directories in the `releases` folder
     const releasesEntriesResult = await toAsyncResult(
       fs.readdir("releases", { withFileTypes: true }),
+      { debug: opts.debug },
     );
 
     if (!releasesEntriesResult.success) {
@@ -112,7 +112,7 @@ export async function pull(
 
   const pullResults = await Promise.allSettled(
     releasesToPull.map(async (releaseToPull) =>
-      pullRelease(releaseToPull, releaseStorageProvider)
+      pullRelease(releaseToPull, releaseStorageProvider, opts.debug)
         .then(() => {
           console.log(
             LOG_COLORS.success,
@@ -120,10 +120,17 @@ export async function pull(
           );
         })
         .catch((err) => {
-          console.error(
-            LOG_COLORS.error,
-            `\nError pulling release "${releaseToPull}": ${err.message}`,
-          );
+          if (opts.debug) {
+            console.error(
+              LOG_COLORS.error,
+              `\nError pulling release "${releaseToPull}": ${err.message}`,
+            );
+          } else {
+            console.error(
+              LOG_COLORS.error,
+              `\nError pulling release "${releaseToPull}"`,
+            );
+          }
           throw err;
         }),
     ),
@@ -150,12 +157,13 @@ export async function pull(
 async function pullRelease(
   releaseToPull: string,
   releaseStorageProvider: ReleaseStorageProvider,
+  debug: boolean,
 ) {
   const releaseContentResult = await toAsyncResult(
     releaseStorageProvider.pullRelease(releaseToPull),
+    { debug },
   );
   if (!releaseContentResult.success) {
-    console.error(releaseContentResult.error);
     throw new ScriptError(
       `Error pulling the release "${releaseToPull}" from the storage`,
     );
@@ -163,6 +171,7 @@ async function pullRelease(
 
   const releaseDirectoryCreationResult = await toAsyncResult(
     fs.mkdir(`releases/${releaseToPull}`, { recursive: true }),
+    { debug },
   );
   if (!releaseDirectoryCreationResult.success) {
     throw new ScriptError(
@@ -175,6 +184,7 @@ async function pullRelease(
       `releases/${releaseToPull}/build-info.json`,
       releaseContentResult.value,
     ),
+    { debug },
   );
   if (!copyResult.success) {
     throw new ScriptError(

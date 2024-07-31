@@ -193,10 +193,18 @@ async function verifyContractOnce(payload: VerifyPayload) {
 
 export function toAsyncResult<T, TError = Error>(
   promise: Promise<T>,
+  opts: {
+    debug?: boolean;
+  } = {},
 ): Promise<{ success: true; value: T } | { success: false; error: TError }> {
   return promise
     .then((value) => ({ success: true as const, value }))
-    .catch((error) => ({ success: false as const, error }));
+    .catch((error) => {
+      if (opts.debug) {
+        console.error(error);
+      }
+      return { success: false as const, error };
+    });
 }
 
 const literalSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
