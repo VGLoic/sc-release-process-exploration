@@ -5,11 +5,9 @@ RELEASE_TAG_WITHOUT_PREFIX=$(cat package.json | jq -r '.version')
 
 echo "Publishing release $RELEASE_TAG_WITHOUT_PREFIX"
 
-yarn cli push $RELEASE_TAG_WITHOUT_PREFIX
+yarn cli push "$RELEASE_TAG_WITHOUT_PREFIX" && echo "Successfully pushed release artifact" || echo "Failed to push release, we assume here that this is because the release already exists. We need to improve this!"
 
-echo "Build info file uploaded to S3"
-
-echo "Downloading release artifacts from S3"
+echo "Downloading release artifacts"
 
 yarn cli pull
 
