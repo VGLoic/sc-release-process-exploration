@@ -1,7 +1,29 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "hardhat-deploy";
+import "hardhat-soko";
 import "dotenv/config";
+import { SokoHardhatUserConfig } from "hardhat-soko";
+
+let sokoConfig: SokoHardhatUserConfig | undefined = undefined;
+if (
+  process.env.AWS_REGION &&
+  process.env.AWS_S3_BUCKET &&
+  process.env.AWS_ACCESS_KEY_ID &&
+  process.env.AWS_SECRET_ACCESS_KEY
+) {
+  sokoConfig = {
+    directory: ".soko",
+    typingsDirectory: ".soko-typings",
+    storageConfiguration: {
+      type: "aws",
+      awsRegion: process.env.AWS_REGION,
+      awsBucketName: process.env.AWS_S3_BUCKET,
+      awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+  };
+}
 
 export const config: HardhatUserConfig = {
   namedAccounts: {
@@ -9,6 +31,7 @@ export const config: HardhatUserConfig = {
       default: 0, // First account is taken as deployer
     },
   },
+  soko: sokoConfig,
   networks: {
     localhost: {
       chainId: 31337,

@@ -33,61 +33,60 @@ jobs:
         run: yarn
       - name: Create artifacts
         run: yarn compile
-      - name: Compile scripts
-        run: yarn scripts:compile
       - name: Pull latest release
         env:
           AWS_S3_BUCKET: ${{ secrets.S3_BUCKET_NAME }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: eu-west-3
-        run: yarn cli pull -r latest
+        run: yarn hardhat soko pull -r latest
       - name: Create diff between artifacts and latest release
-        uses: actions/github-script@v7
         id: artifacts-diff
-        with:
-          script: |
-            const { generateDiffWithLatest } = await import('${{ github.workspace }}/dist/diff-with-latest.js');
-            const diff = await generateDiffWithLatest();
-            return diff;
-      - name: Create or update comment on PR
-        uses: actions/github-script@v7
-        with:
-          script: |
-            // 1. Retrieve existing bot comments for the PR
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            const existingBotComment = comments.find(comment => {
-              return comment.user.type === 'Bot' && comment.body.includes('Release Plan Output')
-            });
-            // 2. Create new comment with diff
-            console.log(typeof ${{ steps.artifacts-diff.outputs.result }}); // Debugging
-            let output = "#### Release Plan Output";
-            if (${{ steps.artifacts-diff.outputs.result }}.length === 0) {
-              output += "\nNo changes detected in the release artifacts.";
-            } else {
-              output += "\n```";
-              for (const diff of ${{ steps.artifacts-diff.outputs.result }}) {
-                output += "\n";
-                output += `- ${diff.name} (${diff.path}): ${diff.status}`;
-              }
-              output += "\n```";
-            }
-            output += "\n\nComparison is made between the latest release artifacts and the current artifacts generated from the PR code."
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            });
-            // 3. Delete previous comment so PR timeline makes sense
-            if (existingBotComment) {
-              github.rest.issues.deleteComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existingBotComment.id,
-              });
-            }
+        run: |
+          echo "result=$(yarn hardhat soko diff latest)"
+        # with:
+        #   script: |
+        #     const { generateDiffWithLatest } = await import('${{ github.workspace }}/dist/diff-with-latest.js');
+        #     const diff = await generateDiffWithLatest();
+        #     return diff;
+      # - name: Create or update comment on PR
+      #   uses: actions/github-script@v7
+      #   with:
+      #     script: |
+      #       // 1. Retrieve existing bot comments for the PR
+      #       const { data: comments } = await github.rest.issues.listComments({
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         issue_number: context.issue.number,
+      #       });
+      #       const existingBotComment = comments.find(comment => {
+      #         return comment.user.type === 'Bot' && comment.body.includes('Release Plan Output')
+      #       });
+      #       // 2. Create new comment with diff
+      #       console.log(typeof ${{ steps.artifacts-diff.outputs.result }}); // Debugging
+      #       let output = "#### Release Plan Output";
+      #       if (${{ steps.artifacts-diff.outputs.result }}.length === 0) {
+      #         output += "\nNo changes detected in the release artifacts.";
+      #       } else {
+      #         output += "\n```";
+      #         for (const diff of ${{ steps.artifacts-diff.outputs.result }}) {
+      #           output += "\n";
+      #           output += `- ${diff.name} (${diff.path}): ${diff.status}`;
+      #         }
+      #         output += "\n```";
+      #       }
+      #       output += "\n\nComparison is made between the latest release artifacts and the current artifacts generated from the PR code."
+      #       github.rest.issues.createComment({
+      #         issue_number: context.issue.number,
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         body: output
+      #       });
+      #       // 3. Delete previous comment so PR timeline makes sense
+      #       if (existingBotComment) {
+      #         github.rest.issues.deleteComment({
+      #           owner: context.repo.owner,
+      #           repo: context.repo.repo,
+      #           comment_id: existingBotComment.id,
+      #         });
+      #       }

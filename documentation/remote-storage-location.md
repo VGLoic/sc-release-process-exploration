@@ -62,7 +62,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: eu-west-3
-        run: yarn cli push latest -f
+        run: yarn hardhat soko push latest -f
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
@@ -99,7 +99,7 @@ As we can't rely on the usual integration of Hardhat or `hardhat-deploy`, helper
 As the releases artifacts are stored remotely, one would need to download them locally before trying to deploy. With the option of AWS S3, it would look like
 
 ```console
-yarn cli pull
+yarn hardhat soko pull
 ```
 
 The pull will automatically generate the typings to be used later on.

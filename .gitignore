@@ -16,7 +16,6 @@ dist
 abis
 generated-delta
 
-# Releases files
-releases
-deployments/localhost
-deployments-summary.json
+# Soko
+.soko
+.soko-typings
