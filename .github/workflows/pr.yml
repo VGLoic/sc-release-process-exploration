@@ -46,7 +46,10 @@ jobs:
       - name: Create diff between artifacts and latest release
         id: artifacts-diff
         run: |
-          echo "result=$(yarn hardhat soko diff --release latest)"
+          diff_result=$(yarn hardhat soko diff --release latest)
+          echo "DIFF=$diff_result" >> "$GITHUB_OUTPUT"
+      - name: Test output
+        run: echo ${{ steps.artifacts-diff.outputs.DIFF }}
         # with:
         #   script: |
         #     const { generateDiffWithLatest } = await import('${{ github.workspace }}/dist/diff-with-latest.js');
