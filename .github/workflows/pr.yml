@@ -39,11 +39,11 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: eu-west-3
-        run: yarn hardhat soko pull -r latest
+        run: yarn hardhat soko pull --release latest
       - name: Create diff between artifacts and latest release
         id: artifacts-diff
         run: |
-          echo "result=$(yarn hardhat soko diff latest)"
+          echo "result=$(yarn hardhat soko diff --release latest)"
         # with:
         #   script: |
         #     const { generateDiffWithLatest } = await import('${{ github.workspace }}/dist/diff-with-latest.js');
