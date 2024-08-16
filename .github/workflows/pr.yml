@@ -46,8 +46,7 @@ jobs:
       - name: Create diff between artifacts and latest release
         id: artifacts-diff
         run: |
-          result=$(yarn hardhat soko diff --release latest)
-          echo "DIFF=$result" >> "$GITHUB_OUTPUT"
+          echo "DIFF=$(yarn hardhat soko diff --release latest)" >> "$GITHUB_OUTPUT"
       - name: Test output
         run: echo ${{ steps.artifacts-diff.outputs.DIFF }}
         # with:
