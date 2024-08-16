@@ -16,7 +16,7 @@ jobs:
           node-version-file: .nvmrc
       - run: yarn install --frozen-lockfile
       - name: Generate default typings
-        run: yarn hardhat soko typingsg
+        run: yarn hardhat soko typings
       - run: yarn format:check
       - run: yarn lint
       - run: yarn typecheck
