@@ -48,7 +48,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const { generateDiffWithTargetRelease } = require("hardhat-soko");
+            const { generateDiffWithTargetRelease } = require("hardhat-soko/scripts");
             const diff = await generateDiffWithTargetRelease(".soko", "latest");
             return diff;
       - name: Create or update comment on PR
