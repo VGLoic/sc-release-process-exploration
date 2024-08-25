@@ -25,10 +25,13 @@ Deployments will be stored in the `deployments` folder which is commited on the 
 
 A NPM package is created in order to share the ABIs and the deployments.
 
-## CLI
+## Hardhat Plugin and CLI
 
-In order to interact easily with the release storage, a dedicated CLI has been made
-![cli screenshot](/images/cli-img.png)
+Two implementations exist for this version.
+
+The first one relies on a local CLI, see this [commit](https://github.com/VGLoic/sc-release-process-exploration/commit/7516cbcdd9f31a162dd27bd8075be819bafbdd31).
+
+The second one relies on a dedicated Hardhat plugin [Hardhat Soko](https://github.com/VGLoic/hardhat-soko), see latest version of this repository.
 
 ## Workflows
 
@@ -38,6 +41,12 @@ The `main.yml` workflow file contains the heart of the artifacts release process
 > While the workflows uses the internal CLI, it is straightforward to do without it.
 
 ```yaml
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
 jobs:
   release:
     name: Upload latest release artifacts and release NPM package
@@ -51,18 +60,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.10
+          node-version-file: .nvmrc
       - name: Install dependencies
         run: yarn
       - name: Create artifacts
         run: yarn compile
-      - name: Push latest release to S3
-        env:
-          AWS_S3_BUCKET: ${{ secrets.S3_BUCKET_NAME }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: eu-west-3
-        run: yarn hardhat soko push latest -f
+      - name: Push latest release to storage
+        run: yarn hardhat soko push --release latest --force
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
@@ -78,10 +82,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          AWS_S3_BUCKET: ${{ secrets.S3_BUCKET_NAME }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: eu-west-3
 ```
 
 The `tags.yaml` worfklow will handle all the other releases and will be quite similar in terms of jobs.

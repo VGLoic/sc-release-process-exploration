@@ -41,7 +41,7 @@ jobs:
         run: yarn
       - name: Create artifacts
         run: yarn compile
-      - name: Push latest release to S3
+      - name: Push latest release to storage
         run: yarn hardhat soko push --release latest --force
       - name: Create Release Pull Request or Publish to npm
         id: changesets
