@@ -1,5 +1,11 @@
 # sc-release-process-exploration
 
+## 1.5.0
+
+### Minor Changes
+
+- af34aca: Increment multiplier update from 4 to 5
+
 ## 1.4.9
 
 ### Patch Changes
