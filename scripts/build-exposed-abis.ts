@@ -4,7 +4,7 @@ import { build as tsupBuild } from "tsup";
 import path from "node:path";
 import { getReleaseBuildInfo } from "../.soko-typings";
 
-const RELEASES_FOLDER = path.join(__dirname, "../releases");
+const RELEASES_FOLDER = path.join(__dirname, "../.soko");
 const ABIS_FOLDER = path.join(__dirname, "../abis");
 // Temporary `abis-tmp` folder for storing the files waiting to be bundled
 const ABIS_TMP_FOLDER = path.join(__dirname, "../abis-tmp");
