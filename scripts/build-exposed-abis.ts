@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import { toAsyncResult } from "./utils";
 import { build as tsupBuild } from "tsup";
 import path from "node:path";
-import { getReleaseBuildInfo } from "./artifacts";
+import { getReleaseBuildInfo } from "../.soko-typings";
 
 const RELEASES_FOLDER = path.join(__dirname, "../releases");
 const ABIS_FOLDER = path.join(__dirname, "../abis");
@@ -231,7 +231,8 @@ async function fillAbisTmpFolder() {
     .filter((name) => name !== "generated");
 
   for (const release of releasesDirectories) {
-    const buildInfoResult = await toAsyncResult(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const buildInfoResult: any = await toAsyncResult(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       getReleaseBuildInfo(release as any),
     );
