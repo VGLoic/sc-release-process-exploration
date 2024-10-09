@@ -5324,10 +5324,10 @@ hardhat-gas-reporter@^1.0.8:
     eth-gas-reporter "^0.2.25"
     sha1 "^1.1.1"
 
-hardhat-soko@0.6.3:
-  version "0.6.3"
-  resolved "https://registry.yarnpkg.com/hardhat-soko/-/hardhat-soko-0.6.3.tgz#239ea21ac7da30863425e38c3e431db5cf98a626"
-  integrity sha512-Z09mmnl29nFE3m3XURwbf172/PeQRS8pdgVofthjoL4ibFAKao9wo0PGx4n/+wRAgXkQnUbJP2WZXXf2L1XY8g==
+hardhat-soko@0.6.4:
+  version "0.6.4"
+  resolved "https://registry.yarnpkg.com/hardhat-soko/-/hardhat-soko-0.6.4.tgz#211779b6bc803adccc00e3feef287024e343ed28"
+  integrity sha512-Qtf6wn6yUWhiw+BJ2gkGDFtfyHkBC0wSbvWcOeAfPd4aX+JbLpd6KvYgDZjxfeenvJoRuA/Jes0Gj8OmW/S/eQ==
   dependencies:
     "@aws-sdk/client-s3" "^3.624.0"
     "@smithy/types" "^3.3.0"
