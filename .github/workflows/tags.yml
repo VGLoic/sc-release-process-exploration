@@ -27,4 +27,4 @@ jobs:
       - name: Create artifacts
         run: yarn compile
       - name: Push release to S3
-        run: yarn hardhat soko push --release ${{ github.ref_name }}
+        run: yarn hardhat soko push --artifact-path ./artifacts --tag doubtful-counter:${{ github.ref_name }}

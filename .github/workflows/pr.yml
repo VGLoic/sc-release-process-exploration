@@ -42,7 +42,7 @@ jobs:
       - name: Create artifacts
         run: yarn compile
       - name: Pull latest release
-        run: yarn hardhat soko pull --release latest
+        run: yarn hardhat soko pull --artifact doubtful-counter:latest
       - name: Create diff between artifacts and latest release
         id: artifacts-diff
         uses: actions/github-script@v7

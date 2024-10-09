@@ -1,10 +1,10 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import { contract, getReleaseBuildInfo } from "../.soko-typings";
+import { project } from "../.soko-typings";
 import { verifyContract } from "../scripts/utils";
 import { ethers } from "ethers";
 
-const TARGET_RELEASE = "v1.4.5";
+const TARGET_RELEASE = "v1.1.1";
 
 const deployCounter: DeployFunction = async function (
   hre: HardhatRuntimeEnvironment,
@@ -18,18 +18,18 @@ const deployCounter: DeployFunction = async function (
     balance: ethers.formatEther(balance),
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const latestBuildInfo: any = await getReleaseBuildInfo(TARGET_RELEASE).catch(
-    (error) => {
+  const projectUtils = project("doubtful-counter").tag(TARGET_RELEASE);
+
+  const latestBuildInfo = await projectUtils
+    .getCompilationArtifact()
+    .catch((error) => {
       console.error("Error getting build info", error);
       process.exit(1);
-    },
-  );
+    });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const incrementOracleArtifact: any = await contract(
+  const incrementOracleArtifact = await projectUtils.getContractArtifact(
     "src/IncrementOracle.sol:IncrementOracle",
-  ).getArtifact(TARGET_RELEASE);
+  );
 
   const incrementOracleDeployment = await hre.deployments.deploy(
     `IncrementOracle@${TARGET_RELEASE}`,
@@ -54,10 +54,9 @@ const deployCounter: DeployFunction = async function (
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const counterArtifact: any = await contract(
+  const counterArtifact = await projectUtils.getContractArtifact(
     "src/Counter.sol:Counter",
-  ).getArtifact(TARGET_RELEASE);
+  );
   const counterDeployment = await hre.deployments.deploy(
     `Counter@${TARGET_RELEASE}`,
     {
