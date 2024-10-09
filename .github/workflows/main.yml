@@ -44,7 +44,7 @@ jobs:
       - name: Create artifacts
         run: yarn compile
       - name: Push latest release to storage
-        run: yarn hardhat soko push --artifact-path ./artifacts --doubtful-counter:tag latest --force
+        run: yarn hardhat soko push --artifact-path ./artifacts --tag doubtful-counter:latest --force
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
