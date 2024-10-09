@@ -2,9 +2,8 @@ import fs from "fs/promises";
 import { toAsyncResult } from "./result-utils";
 import { build as tsupBuild } from "tsup";
 import path from "node:path";
-import { getReleaseBuildInfo } from "../.soko-typings";
+import { project } from "../.soko-typings";
 
-const RELEASES_FOLDER = path.join(__dirname, "../.soko");
 const ABIS_FOLDER = path.join(__dirname, "../abis");
 // Temporary `abis-tmp` folder for storing the files waiting to be bundled
 const ABIS_TMP_FOLDER = path.join(__dirname, "../abis-tmp");
@@ -57,16 +56,6 @@ const ABIS_OLD_FOLDER = path.join(__dirname, "../abis-old");
  * - A release folder contains a file `build-info.json` with the structure of `BuildInfo`,
  */
 async function buildExposedAbis() {
-  const hasReleasesFolder = await fs.stat(RELEASES_FOLDER).catch(() => false);
-  if (!hasReleasesFolder) {
-    // Exit if there are no releases
-    console.error(
-      `❌ Releases folder has not been found at \`${RELEASES_FOLDER}\`. Build cancelled.`,
-    );
-    process.exitCode = 1;
-    return;
-  }
-
   // Remove the `abis-tmp` folder if it exists
   const hasAbisTmpFolder = await fs.stat(ABIS_TMP_FOLDER).catch(() => false);
   if (hasAbisTmpFolder) {
@@ -219,48 +208,42 @@ async function fillAbisTmpFolder() {
   await fs.mkdir(ABIS_TMP_FOLDER_FOR_BUNDLE);
   await fs.mkdir(ABIS_TMP_FOLDER_JSON);
 
-  const releasesEntriesResult = await toAsyncResult(
-    fs.readdir(RELEASES_FOLDER, { withFileTypes: true }),
-  );
-  if (!releasesEntriesResult.success) {
-    throw new Error("Error reading the `releases` folder");
-  }
-  const releasesDirectories = releasesEntriesResult.value
-    .filter((dirent) => dirent.isDirectory())
-    .map((dirent) => dirent.name);
+  const projectUtils = project("doubtful-counter");
 
-  for (const release of releasesDirectories) {
-    console.log("RELEASE: ", release);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const buildInfoResult: any = await toAsyncResult(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      getReleaseBuildInfo(release as any),
+  const tags = projectUtils.getAvailableTags();
+
+  for (const tag of tags) {
+    const compilationArtifactResult = await toAsyncResult(
+      projectUtils.tag(tag).getCompilationArtifact(),
     );
-    if (!buildInfoResult.success) {
-      throw buildInfoResult.error;
+    if (!compilationArtifactResult.success) {
+      throw compilationArtifactResult.error;
     }
 
-    await fs.mkdir(path.join(ABIS_TMP_FOLDER_FOR_BUNDLE, release), {
+    await fs.mkdir(path.join(ABIS_TMP_FOLDER_FOR_BUNDLE, tag), {
       recursive: true,
     });
-    await fs.mkdir(path.join(ABIS_TMP_FOLDER_JSON, release), {
+    await fs.mkdir(path.join(ABIS_TMP_FOLDER_JSON, tag), {
       recursive: true,
     });
 
-    for (const contractPath in buildInfoResult.value.output.contracts) {
-      const contracts = buildInfoResult.value.output.contracts[contractPath];
+    for (const contractPath in compilationArtifactResult.value.output
+      .contracts) {
+      const contracts =
+        compilationArtifactResult.value.output.contracts[contractPath];
       for (const contractName in contracts) {
         const contractKey = `${contractPath.replace("/", "_")}:${contractName}`;
 
         // Parsing is not perfect, so we take the raw parsed data using JSON.parse
         const contractAbi =
-          buildInfoResult.value.output.contracts[contractPath][contractName]
-            .abi;
+          compilationArtifactResult.value.output.contracts[contractPath][
+            contractName
+          ].abi;
 
         await fs.writeFile(
           path.join(
             ABIS_TMP_FOLDER_JSON,
-            release,
+            tag,
             fromPascalCaseToKebabCase(contractKey) + ".json",
           ),
           JSON.stringify(contractAbi, null, 4),
@@ -269,7 +252,7 @@ async function fillAbisTmpFolder() {
         await fs.writeFile(
           path.join(
             ABIS_TMP_FOLDER_FOR_BUNDLE,
-            release,
+            tag,
             fromPascalCaseToKebabCase(contractKey) + ".ts",
           ),
           `export const abi = ${JSON.stringify(

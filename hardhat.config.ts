@@ -13,8 +13,8 @@ if (
   process.env.AWS_SECRET_ACCESS_KEY
 ) {
   sokoConfig = {
-    directory: ".soko",
-    typingsDirectory: ".soko-typings",
+    pulledArtifactsPath: ".soko",
+    typingsPath: ".soko-typings",
     storageConfiguration: {
       type: "aws",
       awsRegion: process.env.AWS_REGION,
