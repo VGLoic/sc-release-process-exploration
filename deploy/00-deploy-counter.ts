@@ -4,7 +4,7 @@ import { project } from "../.soko-typings";
 import { verifyContract } from "../scripts/utils";
 import { ethers } from "ethers";
 
-const TARGET_RELEASE = "v1.1.1";
+const TARGET_RELEASE = "v1.1.0";
 
 const deployCounter: DeployFunction = async function (
   hre: HardhatRuntimeEnvironment,
