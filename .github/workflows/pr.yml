@@ -48,8 +48,13 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const { generateDiffWithTargetRelease } = require("hardhat-soko/scripts");
-            const diff = await generateDiffWithTargetRelease(".soko", "latest");
+            const { generateDiffWithTargetRelease, LocalStorageProvider } = require("hardhat-soko/scripts");
+            const diff = await generateDiffWithTargetRelease(
+              "./artifacts",
+              { project: "doubtful-counter", tagOrId: "latest" },
+               undefined,
+               new LocalStorageProvider(".soko")
+            );
             return diff;
       - name: Create or update comment on PR
         uses: actions/github-script@v7
