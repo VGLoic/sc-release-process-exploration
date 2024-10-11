@@ -15,6 +15,7 @@ cache_hardhat
 dist
 abis
 generated-delta
+deployments-summary.json
 
 # Soko
 .soko
