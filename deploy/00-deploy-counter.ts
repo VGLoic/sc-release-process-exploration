@@ -20,7 +20,7 @@ const deployCounter: DeployFunction = async function (
 
   const projectUtils = project("doubtful-counter").tag(TARGET_RELEASE);
 
-  const latestBuildInfo = await projectUtils
+  const compilationArtifact = await projectUtils
     .getCompilationArtifact()
     .catch((error) => {
       console.error("Error getting build info", error);
@@ -47,8 +47,8 @@ const deployCounter: DeployFunction = async function (
   if (hre.network.verify) {
     await verifyContract({
       address: incrementOracleDeployment.address,
-      sourceCode: latestBuildInfo.input,
-      compilerVersion: latestBuildInfo.solcLongVersion,
+      compilationInput: compilationArtifact.input,
+      compilerVersion: compilationArtifact.solcLongVersion,
       sourceName: "src/IncrementOracle.sol",
       contractName: "IncrementOracle",
     });
@@ -77,8 +77,8 @@ const deployCounter: DeployFunction = async function (
   if (hre.network.verify) {
     await verifyContract({
       address: counterDeployment.address,
-      sourceCode: latestBuildInfo.input,
-      compilerVersion: latestBuildInfo.solcLongVersion,
+      compilationInput: compilationArtifact.input,
+      compilerVersion: compilationArtifact.solcLongVersion,
       sourceName: "src/Counter.sol",
       contractName: "Counter",
       libraries: [

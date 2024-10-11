@@ -22,7 +22,8 @@ export async function retrieveOrDeploy(
   );
   if (!result.differences && result.address) {
     console.log(
-      `\n✔️ The deployment ${deploymentName} is known, deployed contract is found at address ${result.address}. Re-using it.\n`,
+      `\n✔️ The deployment ${deploymentName} is known, deployed contract
+       is found at address ${result.address}. Re-using it.\n`,
     );
     return result.address;
   }
@@ -44,7 +45,7 @@ type VerifyPayload = {
   // Address of the deployed contract
   address: string;
   // Source code of the contract - input part of the build info
-  sourceCode: BuildInfo["input"];
+  compilationInput: BuildInfo["input"];
   // Compiler version - solcLongVersion of the build info
   compilerVersion: string;
   // Source name of the contract - path of the contract file
@@ -65,7 +66,7 @@ type VerifyPayload = {
  * @dev Need to be completed with constructor arguments
  * @param payload Verification payload
  * @param payload.address Address of the deployed contract
- * @param payload.sourceCode Source code of the contract - input part of the build info
+ * @param payload.compilationInput Input part of the build info
  * @param payload.compilerVersion Compiler version - solcLongVersion of the build info
  * @param payload.sourceName Source name of the contract - path of the contract file
  * @param payload.contractName Contract name - name of the contract in the source file
@@ -76,7 +77,7 @@ export async function verifyContract(payload: VerifyPayload) {
   const updatedSetting: BuildInfo["input"]["settings"] & {
     libraries: NonNullable<BuildInfo["input"]["settings"]["libraries"]>;
   } = {
-    ...payload.sourceCode.settings,
+    ...payload.compilationInput.settings,
     libraries: {},
   };
 
@@ -88,11 +89,21 @@ export async function verifyContract(payload: VerifyPayload) {
     }
   }
 
+  const updatedSources: BuildInfo["input"]["sources"] = {};
+  for (const [sourceName, source] of Object.entries(
+    payload.compilationInput.sources,
+  )) {
+    updatedSources[sourceName] = {
+      content: source.content,
+    };
+  }
+
   const updatedSourceCode: BuildInfo["input"] = {
-    ...payload.sourceCode,
+    ...payload.compilationInput,
+    sources: updatedSources,
     settings: updatedSetting,
   };
-  payload.sourceCode = updatedSourceCode;
+  payload.compilationInput = updatedSourceCode;
 
   // ******************* End disabling *******************
   for (let i = 0; i < 5; i++) {
@@ -140,7 +151,7 @@ async function verifyContractOnce(payload: VerifyPayload) {
     // Contract address
     payload.address,
     // Inputs
-    JSON.stringify(payload.sourceCode),
+    JSON.stringify(payload.compilationInput),
     // Contract full name
     `${payload.sourceName}:${payload.contractName}`,
     // Compiler version
